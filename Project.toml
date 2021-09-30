@@ -1,0 +1,7 @@
+name = "HeapSnapshotParser"
+uuid = "8bee342e-6993-40d5-b782-2bd072a121bd"
+authors = ["Pete Vilter <7341+vilterp@users.noreply.github.com>"]
+version = "0.1.0"
+
+[deps]
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
