@@ -6,6 +6,7 @@ Base.@kwdef struct Node
     kind::Symbol
     type::String
     num_edges::Int
+    self_size::Int
 
     # out_edges::Array{Edge}
 end
@@ -41,12 +42,14 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
     for node_idx = 0:(num_nodes-1)
         kind_key = nodes[node_idx*NUM_NODE_FIELDS + 1]
         name_key = nodes[node_idx*NUM_NODE_FIELDS + 2]
+        self_size = nodes[node_idx*NUM_NODE_FIELDS + 4]
         num_edges = nodes[node_idx*NUM_NODE_FIELDS + 5]
 
         node = Node(
             kind=Symbol(node_kind_enum[kind_key + 1]),
             type=parsed.strings[name_key + 1],
             num_edges=num_edges,
+            self_size=self_size,
         )
 
         push!(snapshot.nodes, node)
@@ -85,6 +88,18 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
     end
 
     return snapshot
+end
+
+function root_node(snapshot::HeapSnapshot)::Node
+    return snapshot.nodes[1]
+end
+
+function live_bytes(snapshot::HeapSnapshot)::Int
+    sum = 0
+    for node in snapshot.nodes
+        sum += node.self_size
+    end
+    return sum
 end
 
 # TODO: struct RawEdge
