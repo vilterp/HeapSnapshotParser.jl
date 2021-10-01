@@ -8,7 +8,11 @@ Base.@kwdef struct Node
     num_edges::Int
     self_size::Int
 
-    # out_edges::Array{Edge}
+    # index into snapshot.edges
+    # would be an array of indexes, but Julia doesn't
+    # support types which refer to each other :facepalm:
+    # https://github.com/JuliaLang/julia/issues/269
+    out_edge_indexes::Array{Int}
 end
 
 Base.@kwdef struct Edge
@@ -50,6 +54,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             type=parsed.strings[name_key + 1],
             num_edges=num_edges,
             self_size=self_size,
+            out_edge_indexes=[], # filled in below
         )
 
         push!(snapshot.nodes, node)
@@ -83,6 +88,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             )
 
             push!(snapshot.edges, edge)
+            push!(from_node.out_edge_indexes, length(snapshot.edges))
             edge_idx += 1
         end
     end
@@ -100,6 +106,16 @@ function live_bytes(snapshot::HeapSnapshot)::Int
         sum += node.self_size
     end
     return sum
+end
+
+# need this because we can't store the edges directly on the node
+function out_edges(snapshot::HeapSnapshot, node::Node)::Array{Edge}
+    out = Edge[]
+    for edge_idx in node.out_edge_indexes
+        edge = snapshot.edges[edge_idx]
+        push!(out, edge)
+    end
+    return out
 end
 
 # TODO: struct RawEdge
