@@ -1,10 +1,12 @@
 module HeapSnapshotParser
 
 using JSON3
+using LightGraphs
 
 Base.@kwdef struct Node
     kind::Symbol
     type::String
+    id::Int
     num_edges::Int
     self_size::Int
 
@@ -46,6 +48,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
     for node_idx = 0:(num_nodes-1)
         kind_key = nodes[node_idx*NUM_NODE_FIELDS + 1]
         name_key = nodes[node_idx*NUM_NODE_FIELDS + 2]
+        id = nodes[node_idx*NUM_NODE_FIELDS + 3]
         self_size = nodes[node_idx*NUM_NODE_FIELDS + 4]
         num_edges = nodes[node_idx*NUM_NODE_FIELDS + 5]
 
@@ -55,6 +58,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             num_edges=num_edges,
             self_size=self_size,
             out_edge_indexes=[], # filled in below
+            id=id,
         )
 
         push!(snapshot.nodes, node)
@@ -116,6 +120,24 @@ function out_edges(snapshot::HeapSnapshot, node::Node)::Array{Edge}
         push!(out, edge)
     end
     return out
+end
+
+function as_lightgraph(snapshot::HeapSnapshot)::LightGraphs.DiGraph
+    g = SimpleDiGraph{Int}()
+    id_to_seq = Dict()
+    i = 0
+    for node in snapshot.nodes
+        # LightGraphs doesn't let us add nodes with our own ids,
+        # it assigns sequential ids.
+        # So, keep a mapping from our ids to sequential ids.
+        add_vertex!(g)
+        id_to_seq[node.id] = i
+        i += 1
+    end
+    for edge in snapshot.edges
+        add_edge!(g, id_to_seq[edge.from.id], id_to_seq[edge.to.id])
+    end
+    return g
 end
 
 # TODO: struct RawEdge
