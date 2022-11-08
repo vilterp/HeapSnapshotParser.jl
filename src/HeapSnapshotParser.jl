@@ -2,8 +2,9 @@ module HeapSnapshotParser
 
 using JSON
 using LightGraphs
+using StructEquality
 
-Base.@kwdef struct Node
+@struct_hash_equal Base.@kwdef struct Node
     kind::Symbol
     type::String
     id::Int
@@ -17,7 +18,7 @@ Base.@kwdef struct Node
     out_edge_indexes::Array{Int}
 end
 
-Base.@kwdef struct Edge
+@struct_hash_equal Base.@kwdef struct Edge
     kind::Symbol
     name::String
 
