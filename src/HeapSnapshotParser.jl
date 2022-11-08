@@ -2,6 +2,7 @@ module HeapSnapshotParser
 
 using JSON3
 using LightGraphs
+using ProgressMeter
 
 Base.@kwdef struct Node
     kind::Symbol
@@ -45,7 +46,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
 
     nodes = parsed.nodes
     num_nodes = convert(Int, length(nodes)/NUM_NODE_FIELDS)
-    for node_idx = 0:(num_nodes-1)
+    @showprogress "Importing $num_nodes nodes..." for node_idx = 0:(num_nodes-1)
         kind_key = nodes[node_idx*NUM_NODE_FIELDS + 1]
         name_key = nodes[node_idx*NUM_NODE_FIELDS + 2]
         id = nodes[node_idx*NUM_NODE_FIELDS + 3]
@@ -66,7 +67,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
 
     edges = parsed.edges
     edge_idx = 0
-    for from_node in snapshot.nodes
+    @showprogress "Processing $(length(snapshot.nodes)) nodes..." for from_node in snapshot.nodes
         for edge_num = 1:(from_node.num_edges)
             kind_key = edges[edge_idx*NUM_EDGE_FIELDS + 1]
             name_key = edges[edge_idx*NUM_EDGE_FIELDS + 2]
