@@ -1,6 +1,6 @@
 module HeapSnapshotParser
 
-using JSON3
+using JSON
 using LightGraphs
 
 Base.@kwdef struct Node
@@ -37,13 +37,14 @@ EDGE_FIELDS = ["type", "name_or_index", "to_node"]
 NUM_EDGE_FIELDS = length(EDGE_FIELDS)
 
 function parse_snapshot(input::IOStream)::HeapSnapshot
-    parsed = JSON3.read(input)
+    parsed = JSON.parse(input)
     snapshot = HeapSnapshot(nodes=[], edges=[])
 
-    node_kind_enum = parsed.snapshot.meta.node_types[1]
-    edge_kind_enum = parsed.snapshot.meta.edge_types[1]
+    node_kind_enum = parsed["snapshot"]["meta"]["node_types"][1]
+    edge_kind_enum = parsed["snapshot"]["meta"]["edge_types"][1]
 
-    nodes = parsed.nodes
+    nodes = parsed["nodes"]
+    strings = parsed["strings"]
     num_nodes = convert(Int, length(nodes)/NUM_NODE_FIELDS)
     for node_idx = 0:(num_nodes-1)
         kind_key = nodes[node_idx*NUM_NODE_FIELDS + 1]
@@ -54,7 +55,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
 
         node = Node(
             kind=Symbol(node_kind_enum[kind_key + 1]),
-            type=parsed.strings[name_key + 1],
+            type=strings[name_key + 1],
             num_edges=num_edges,
             self_size=self_size,
             out_edge_indexes=[], # filled in below
@@ -64,7 +65,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
         push!(snapshot.nodes, node)
     end
 
-    edges = parsed.edges
+    edges = parsed["edges"]
     edge_idx = 0
     for from_node in snapshot.nodes
         for edge_num = 1:(from_node.num_edges)
@@ -81,7 +82,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             elseif kind == :element
                 "<element>"
             else
-                parsed.strings[name_key+1]
+                strings[name_key+1]
             end
 
             edge = Edge(
