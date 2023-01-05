@@ -11,5 +11,5 @@ using Profile
 Profile.take_heap_snapshot("foo.heapsnapshot")
 
 using HeapSnapshotParser
-s = HeapSnapshotParser.parse_snapshot(open("foo.heapsnapshot"))
+s = HeapSnapshotParser.parse_snapshot("foo.heapsnapshot")
 ```
