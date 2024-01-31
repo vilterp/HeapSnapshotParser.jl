@@ -4,18 +4,15 @@ using JSON
 using LightGraphs
 using StructEquality
 
-@struct_hash_equal Base.@kwdef struct Node
+# Using a type parameter to avoid mutually recursive struct
+# declarations, which Julia doesn't support https://github.com/JuliaLang/julia/issues/269
+@struct_hash_equal Base.@kwdef struct Node{EdgeT}
     kind::Symbol
     type::String
     id::Int
     num_edges::Int
     self_size::Int
-
-    # index into snapshot.edges
-    # would be an array of indexes, but Julia doesn't
-    # support types which refer to each other :facepalm:
-    # https://github.com/JuliaLang/julia/issues/269
-    out_edge_indexes::Array{Int}
+    out_edges::Array{EdgeT}
 end
 
 @struct_hash_equal Base.@kwdef struct Edge
@@ -27,15 +24,21 @@ end
 end
 
 Base.@kwdef struct HeapSnapshot
-    nodes::Array{Node}
+    nodes::Array{Node{Edge}}
     edges::Array{Edge}
 end
 
-NODE_FIElDS = ["type", "name", "id", "self_size", "edge_count", "trace_node_id", "detachedness"]
-NUM_NODE_FIELDS = length(NODE_FIElDS)
+const NODE_FIElDS = ["type", "name", "id", "self_size", "edge_count", "trace_node_id", "detachedness"]
+const NUM_NODE_FIELDS = length(NODE_FIElDS)
 
-EDGE_FIELDS = ["type", "name_or_index", "to_node"]
-NUM_EDGE_FIELDS = length(EDGE_FIELDS)
+const EDGE_FIELDS = ["type", "name_or_index", "to_node"]
+const NUM_EDGE_FIELDS = length(EDGE_FIELDS)
+
+function parse_snapshot(file_path::String)::HeapSnapshot
+    open(file_path) do f
+        return parse_snapshot(f)
+    end
+end
 
 function parse_snapshot(input::IOStream)::HeapSnapshot
     parsed = JSON.parse(input)
@@ -54,12 +57,12 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
         self_size = nodes[node_idx*NUM_NODE_FIELDS + 4]
         num_edges = nodes[node_idx*NUM_NODE_FIELDS + 5]
 
-        node = Node(
+        node = Node{Edge}(
             kind=Symbol(node_kind_enum[kind_key + 1]),
             type=strings[name_key + 1],
             num_edges=num_edges,
             self_size=self_size,
-            out_edge_indexes=[], # filled in below
+            out_edges=[], # filled in below
             id=id,
         )
 
@@ -94,7 +97,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             )
 
             push!(snapshot.edges, edge)
-            push!(from_node.out_edge_indexes, length(snapshot.edges))
+            push!(from_node.out_edges, edge)
             edge_idx += 1
         end
     end
