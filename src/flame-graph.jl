@@ -6,6 +6,10 @@ mutable struct FlameNode
     children::Dict{String,FlameNode}
 end
 
+function Base.show(io::IO, node::FlameNode)
+    print(io, "FlameNode($(node.node), $(length(node.children)) children)")
+end
+
 function FlameNode(node::Node)
     return FlameNode(node, 0, 0, nothing, Dict{String,FlameNode}())
 end
@@ -15,6 +19,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
     for node in values(snapshot.nodes)
         nodes[node.id] = FlameNode(node)
     end
+
     # in-edges per node
     num_in_edges_per_node = Dict{UInt64,Int}()
     for edge in values(snapshot.edges)
@@ -76,7 +81,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
     
     compute_timings!(root_flame_node)
     
-    return root_flame_node
+    return (root_flame_node, nodes)
 end
 
 function compute_timings!(node::FlameNode)
