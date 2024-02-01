@@ -145,7 +145,12 @@ function as_lightgraph(snapshot::HeapSnapshot)::LightGraphs.DiGraph
     return g
 end
 
-# TODO: struct RawEdge
-# TODO: struct RawNode
+function get_flame_graph(snapshot::HeapSnapshot)
+    graph = as_lightgraph(snapshot)
+    undir = LightGraphs.SimpleGraph(graph)
+    mst = LightGraphs.prim_mst(undir)
+    # convert to a flame graph
+    XXXXX
+end
 
 end # module
