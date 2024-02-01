@@ -29,17 +29,35 @@ function get_flame_graph(snapshot::HeapSnapshot)
         end
     end
     
-    @assert length(nodes_with_no_in_edges) == 1
+    # make a fake root node that points to all nodes with no in edges
+    root = Node(
+        id=typemax(UInt64),
+        kind=:fake,
+        type="<root>",
+        self_size=0,
+        num_edges=length(nodes_with_no_in_edges),
+        out_edges=[],
+    )
+    for node in nodes_with_no_in_edges
+        edge = Edge(
+            kind=:internal,
+            name="<root>",
+            from=root,
+            to=nodes[node].node,
+        )
+        push!(root.out_edges, edge)
+    end
     
-    start_node = nodes[collect(nodes_with_no_in_edges)[1]]
+    root_flame_node = FlameNode(root)
+    nodes[root.id] = root_flame_node
     
     # do DFS
     seen = Set{UInt64}()
-    stack = [start_node]
+    stack = [root_flame_node]
     
     while !isempty(stack)
         node = pop!(stack)
-        if haskey(seen, node.node.id)
+        if in(node.node.id, seen)
             continue
         end
         push!(seen, node.node.id)
@@ -52,7 +70,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
         end
     end
     
-    return start_node
+    return root_flame_node
 end
 
 function as_json(node::FlameNode; depth=0, threshold=10000)
