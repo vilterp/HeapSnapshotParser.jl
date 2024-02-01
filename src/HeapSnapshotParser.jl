@@ -137,22 +137,26 @@ function out_edges(snapshot::HeapSnapshot, node::Node)::Array{Edge}
     return out
 end
 
-function as_lightgraph(snapshot::HeapSnapshot)::LightGraphs.DiGraph
+function as_lightgraph(snapshot::HeapSnapshot)::Tuple{LightGraphs.DiGraph, Dict{Int, Node}}
     g = SimpleDiGraph{Int}()
-    id_to_seq = Dict()
+    id_to_seq = Dict{Int,Int}()
+    seq_to_node = Dict{Int,Node}()
     i = 0
-    for node in snapshot.nodes
+    for node in values(snapshot.nodes)
         # LightGraphs doesn't let us add nodes with our own ids,
         # it assigns sequential ids.
         # So, keep a mapping from our ids to sequential ids.
         add_vertex!(g)
         id_to_seq[node.id] = i
+        seq_to_node[i] = node
         i += 1
     end
-    for edge in snapshot.edges
+    for edge in values(snapshot.edges)
         add_edge!(g, id_to_seq[edge.from.id], id_to_seq[edge.to.id])
     end
-    return g
+    return (g, seq_to_node)
 end
+
+include("flame-graph.jl")
 
 end # module
