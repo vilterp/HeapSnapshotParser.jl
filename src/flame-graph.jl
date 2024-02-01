@@ -1,13 +1,13 @@
 mutable struct FlameNode
     node::Node
-    self_value::Float64
-    total_value::Float64
+    self_value::Int
+    total_value::Int
     parent::Union{FlameNode,Nothing}
     children::Vector{FlameNode}
 end
 
 function FlameNode(node::Node)
-    return FlameNode(node, 0.0, 0.0, nothing, [])
+    return FlameNode(node, 0, 0, nothing, [])
 end
 
 function get_flame_graph(snapshot::HeapSnapshot)
