@@ -20,18 +20,18 @@ function get_flame_graph(snapshot::HeapSnapshot)
         nodes[node.id] = FlameNode(node)
     end
 
-    # in-edges per node
-    num_in_edges_per_node = Dict{UInt64,Int}()
-    for edge in values(snapshot.edges)
-        num_in_edges_per_node[edge.to.id] = get(num_in_edges_per_node, edge.to.id, 0) + 1
-    end
-    
     # find nodes with no in edges
     nodes_with_no_in_edges = Set{UInt64}()
     for node in values(snapshot.nodes)
-        if !haskey(num_in_edges_per_node, node.id)
+        if length(node.in_edges) == 0
             push!(nodes_with_no_in_edges, node.id)
         end
+    end
+    
+    @info "nodes with no in edges" nodes_with_no_in_edges
+    
+    for node_id in nodes_with_no_in_edges
+        println(nodes[node_id].node)
     end
     
     # make a fake root node that points to all nodes with no in edges
@@ -42,6 +42,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
         self_size=0,
         num_edges=length(nodes_with_no_in_edges),
         out_edges=[],
+        in_edges=[],
     )
     for node in nodes_with_no_in_edges
         edge = Edge(
@@ -69,11 +70,14 @@ function get_flame_graph(snapshot::HeapSnapshot)
         end
         push!(seen, node.node.id)
         
+        i = 0
         for edge in node.node.out_edges
             child = nodes[edge.to.id]
             child.parent = node
-            node.children[edge.name] = child
+            node.children["$(i): $(edge.name)"] = child
             push!(stack, child)
+
+            i += 1
         end
     end
     
@@ -81,7 +85,21 @@ function get_flame_graph(snapshot::HeapSnapshot)
     
     compute_timings!(root_flame_node)
     
-    return (root_flame_node, nodes)
+    return root_flame_node
+end
+
+function find_unique_edge_name(node::FlameNode, name::String)
+    if !haskey(node.children, name)
+        return name
+    end
+    i = 1
+    while true
+        new_name = "$name-$i"
+        if !haskey(node.children, new_name)
+            return new_name
+        end
+        i += 1
+    end
 end
 
 function compute_timings!(node::FlameNode)
@@ -101,6 +119,7 @@ function as_json(node::FlameNode; depth=0, threshold=10000)
         "name" => node.node.type,
         "self_value" => node.self_value,
         "total_value" => node.total_value,
+        "num_children" => length(node.children),
         "children" => if depth > threshold
             Dict{String,Any}()
         else
