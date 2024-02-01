@@ -15,12 +15,20 @@ using StructEquality
     out_edges::Array{EdgeT}
 end
 
+function Base.show(io::IO, node::Node)
+    print(io, "Node($(node.kind), $(node.type), $(node.id), $(node.num_edges), $(node.self_size))")
+end
+
 @struct_hash_equal Base.@kwdef struct Edge
     kind::Symbol
     name::String
 
     from::Node
     to::Node
+end
+
+function Base.show(io::IO, edge::Edge)
+    print(io, "Edge($(edge.kind), $(edge.name), $(edge.from.id), $(edge.to.id))")
 end
 
 Base.@kwdef struct HeapSnapshot
