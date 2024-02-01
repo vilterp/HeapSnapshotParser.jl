@@ -53,7 +53,7 @@ function as_json(node::FlameNode, depth=0, threshold=10000)
         "children" => if depth > threshold
             []
         else
-            [as_json(child, depth+1) for child in node.children]
+            [as_json(child; depth=depth+1, threshold=threshold) for child in node.children]
         end
     )
 end
