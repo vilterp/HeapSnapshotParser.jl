@@ -24,8 +24,15 @@ end
 end
 
 Base.@kwdef struct HeapSnapshot
-    nodes::Array{Node{Edge}}
-    edges::Array{Edge}
+    nodes::Dict{UInt64, Node{Edge}}
+    edges::Dict{Tuple{UInt64, UInt64}, Edge}
+end
+
+function HeapSnapshot()
+    return HeapSnapshot(
+        nodes=Dict{UInt64, Node{Edge}}(),
+        edges=Dict{Tuple{UInt64, UInt64}, Edge}(),
+    )
 end
 
 const NODE_FIElDS = ["type", "name", "id", "self_size", "edge_count", "trace_node_id", "detachedness"]
@@ -42,7 +49,8 @@ end
 
 function parse_snapshot(input::IOStream)::HeapSnapshot
     parsed = JSON.parse(input)
-    snapshot = HeapSnapshot(nodes=[], edges=[])
+    snapshot = HeapSnapshot()
+    nodes_vec = Vector{Node}()
 
     node_kind_enum = parsed["snapshot"]["meta"]["node_types"][1]
     edge_kind_enum = parsed["snapshot"]["meta"]["edge_types"][1]
@@ -66,18 +74,19 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             id=id,
         )
 
-        push!(snapshot.nodes, node)
+        snapshot.nodes[id] = node
+        push!(nodes_vec, node)
     end
-
+    
     edges = parsed["edges"]
     edge_idx = 0
-    for from_node in snapshot.nodes
+    for from_node in values(snapshot.nodes)
         for edge_num = 1:(from_node.num_edges)
             kind_key = edges[edge_idx*NUM_EDGE_FIELDS + 1]
             name_key = edges[edge_idx*NUM_EDGE_FIELDS + 2]
             to_key = edges[edge_idx*NUM_EDGE_FIELDS + 3]
 
-            to_node_idx = convert(Int, to_key/NUM_NODE_FIELDS) + 1
+            to_node_idx = convert(UInt64, to_key/NUM_NODE_FIELDS) + 1
 
             kind = Symbol(edge_kind_enum[kind_key + 1])
 
@@ -88,15 +97,16 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             else
                 strings[name_key+1]
             end
+            to_node = nodes_vec[to_node_idx]
 
             edge = Edge(
                 kind=kind,
                 name=name,
                 from=from_node,
-                to=snapshot.nodes[to_node_idx],
+                to=to_node,
             )
 
-            push!(snapshot.edges, edge)
+            snapshot.edges[(from_node.id, to_node.id)] = edge
             push!(from_node.out_edges, edge)
             edge_idx += 1
         end
@@ -143,14 +153,6 @@ function as_lightgraph(snapshot::HeapSnapshot)::LightGraphs.DiGraph
         add_edge!(g, id_to_seq[edge.from.id], id_to_seq[edge.to.id])
     end
     return g
-end
-
-function get_flame_graph(snapshot::HeapSnapshot)
-    graph = as_lightgraph(snapshot)
-    undir = LightGraphs.SimpleGraph(graph)
-    mst = LightGraphs.prim_mst(undir)
-    # convert to a flame graph
-    XXXXX
 end
 
 end # module
