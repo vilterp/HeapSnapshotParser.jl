@@ -14,16 +14,17 @@ function get_flame_graph(snapshot::HeapSnapshot)
     graph, seq_to_node = as_lightgraph(snapshot)
     undir = LightGraphs.SimpleGraph(graph)
     mst = LightGraphs.prim_mst(undir)
+    @show(mst)
     # convert to a flame graph
     nodes = Dict{Int, FlameNode}()
     root = nothing
     
     for edge in mst
-        if !haskey(nodes, edge.src)
-            nodes[edge.src] = FlameNode(seq_to_node[edge.src].type)
-        end
         if !haskey(nodes, edge.dst)
             nodes[edge.dst] = FlameNode(seq_to_node[edge.dst].type)
+        end
+        if !haskey(nodes, edge.src)
+            nodes[edge.src] = FlameNode(seq_to_node[edge.src].type)
         end
     end
     # set parents and children
@@ -34,6 +35,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
         push!(parent.children, child)
         # parent.self_value += snapshot.edges[(edge.src, edge.dst)].self_size
         if root === nothing
+            println("setting parent")
             root = parent
         end
     end
