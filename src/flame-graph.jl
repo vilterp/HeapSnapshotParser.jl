@@ -11,45 +11,48 @@ function FlameNode(node::Node)
 end
 
 function get_flame_graph(snapshot::HeapSnapshot)
-    graph, seq_to_node = as_lightgraph(snapshot)
-    undir = LightGraphs.SimpleGraph(graph)
-    mst = LightGraphs.prim_mst(undir)
-    # convert to a flame graph
-    nodes = Dict{Int, FlameNode}()
-    
-    nodes_with_no_parent = Set{Int}()
-    
-    for edge in mst
-        if !haskey(nodes, edge.dst)
-            nodes[edge.dst] = FlameNode(seq_to_node[edge.dst])
-        end
-        push!(nodes_with_no_parent, edge.dst)
-        if !haskey(nodes, edge.src)
-            nodes[edge.src] = FlameNode(seq_to_node[edge.src])
-        end
-        push!(nodes_with_no_parent, edge.src)
+    nodes = Dict{UInt64,FlameNode}()
+    for node in values(snapshot.nodes)
+        nodes[node.id] = FlameNode(node)
     end
-
-    # set parents and children
-    for edge in mst
-        parent = nodes[edge.src]
-        child = nodes[edge.dst]
-        delete!(nodes_with_no_parent, edge.dst)
-        child.parent = parent
-        push!(parent.children, child)
-        # update values
-        cur = child
-        cur.self_value += cur.node.self_size
-        while cur != nothing
-            cur.total_value += cur.node.self_size
-            cur = cur.parent
+    # in-edges per node
+    num_in_edges_per_node = Dict{UInt64,Int}()
+    for edge in values(snapshot.edges)
+        num_in_edges_per_node[edge.to.id] = get(num_in_edges_per_node, edge.to.id, 0) + 1
+    end
+    
+    # find nodes with no in edges
+    nodes_with_no_in_edges = Set{UInt64}()
+    for node in values(snapshot.nodes)
+        if !haskey(num_in_edges_per_node, node.id)
+            push!(nodes_with_no_in_edges, node.id)
         end
     end
     
-    @assert length(nodes_with_no_parent) == 1
+    @assert length(nodes_with_no_in_edges) == 1
     
-    root_id = collect(nodes_with_no_parent)[1]
-    return nodes[root_id]
+    start_node = nodes[collect(nodes_with_no_in_edges)[1]]
+    
+    # do DFS
+    seen = Set{UInt64}()
+    stack = [start_node]
+    
+    while !isempty(stack)
+        node = pop!(stack)
+        if haskey(seen, node.node.id)
+            continue
+        end
+        push!(seen, node.node.id)
+        
+        for edge in node.node.out_edges
+            child = nodes[edge.to.id]
+            child.parent = node
+            push!(node.children, child)
+            push!(stack, child)
+        end
+    end
+    
+    return start_node
 end
 
 function as_json(node::FlameNode; depth=0, threshold=10000)
