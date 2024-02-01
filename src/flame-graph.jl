@@ -3,11 +3,11 @@ mutable struct FlameNode
     self_value::Int
     total_value::Int
     parent::Union{FlameNode,Nothing}
-    children::Vector{FlameNode}
+    children::Dict{String,FlameNode}
 end
 
 function FlameNode(node::Node)
-    return FlameNode(node, 0, 0, nothing, [])
+    return FlameNode(node, 0, 0, nothing, Dict{String,FlameNode}())
 end
 
 function get_flame_graph(snapshot::HeapSnapshot)
@@ -55,6 +55,8 @@ function get_flame_graph(snapshot::HeapSnapshot)
     seen = Set{UInt64}()
     stack = [root_flame_node]
     
+    @info "doing DFS"
+    
     while !isempty(stack)
         node = pop!(stack)
         if in(node.node.id, seen)
@@ -65,12 +67,28 @@ function get_flame_graph(snapshot::HeapSnapshot)
         for edge in node.node.out_edges
             child = nodes[edge.to.id]
             child.parent = node
-            push!(node.children, child)
+            node.children[edge.name] = child
             push!(stack, child)
         end
     end
     
+    @info "computing timings"
+    
+    compute_timings!(root_flame_node)
+    
     return root_flame_node
+end
+
+function compute_timings!(node::FlameNode)
+    # stack = [node]
+    # while !isempty(stack)
+    #     node = pop!(stack)
+    #     node.total_value = node.self_value
+    #     for child in node.children
+    #         node.total_value += child.total_value
+    #         push!(stack, child)
+    #     end
+    # end
 end
 
 function as_json(node::FlameNode; depth=0, threshold=10000)
@@ -79,9 +97,12 @@ function as_json(node::FlameNode; depth=0, threshold=10000)
         "self_value" => node.self_value,
         "total_value" => node.total_value,
         "children" => if depth > threshold
-            []
+            Dict{String,Any}()
         else
-            [as_json(child; depth=depth+1, threshold=threshold) for child in node.children]
+            Dict{String,Any}(
+                name => as_json(child; depth=depth+1, threshold=threshold)
+                for (name, child) in node.children
+            )
         end
     )
 end
