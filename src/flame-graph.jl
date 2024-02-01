@@ -46,7 +46,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
     return nodes[root_id]
 end
 
-function as_json(node::FlameNode, depth=0, threshold=10000)
+function as_json(node::FlameNode; depth=0, threshold=10000)
     return Dict(
         "name" => node.name,
         "value" => node.self_value,
