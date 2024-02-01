@@ -19,46 +19,10 @@ function get_flame_graph(snapshot::HeapSnapshot)
     for node in values(snapshot.nodes)
         nodes[node.id] = FlameNode(node)
     end
-
-    # find nodes with no in edges
-    nodes_with_no_in_edges = Set{UInt64}()
-    for node in values(snapshot.nodes)
-        if length(node.in_edges) == 0
-            push!(nodes_with_no_in_edges, node.id)
-        end
-    end
-    
-    @info "nodes with no in edges" nodes_with_no_in_edges
-    
-    for node_id in nodes_with_no_in_edges
-        println(nodes[node_id].node)
-    end
-    
-    # make a fake root node that points to all nodes with no in edges
-    root = Node(
-        id=typemax(UInt64),
-        kind=:fake,
-        type="<root>",
-        self_size=0,
-        num_edges=length(nodes_with_no_in_edges),
-        out_edges=[],
-        in_edges=[],
-    )
-    for node in nodes_with_no_in_edges
-        edge = Edge(
-            kind=:internal,
-            name="<root>",
-            from=root,
-            to=nodes[node].node,
-        )
-        push!(root.out_edges, edge)
-    end
-    
-    root_flame_node = FlameNode(root)
-    nodes[root.id] = root_flame_node
     
     # do DFS
     seen = Set{UInt64}()
+    root_flame_node = nodes[0]
     stack = [root_flame_node]
     
     @info "doing DFS"
