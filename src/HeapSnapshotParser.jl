@@ -12,7 +12,8 @@ using StructEquality
     id::UInt64
     num_edges::Int
     self_size::Int
-    out_edges::Array{EdgeT}
+    out_edges::Vector{EdgeT}
+    in_edges::Vector{EdgeT}
 end
 
 function Base.show(io::IO, node::Node)
@@ -83,6 +84,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             num_edges=num_edges,
             self_size=self_size,
             out_edges=[], # filled in below
+            in_edges=[],
             id=id,
         )
 
@@ -122,6 +124,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
 
             snapshot.edges[(from_node.id, to_node.id)] = edge
             push!(from_node.out_edges, edge)
+            push!(to_node.in_edges, edge)
             edge_idx += 1
         end
     end
