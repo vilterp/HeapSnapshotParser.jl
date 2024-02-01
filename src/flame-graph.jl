@@ -1,13 +1,13 @@
 mutable struct FlameNode
-    name::String
+    node::Node
     self_value::Float64
     total_value::Float64
     parent::Union{FlameNode,Nothing}
     children::Vector{FlameNode}
 end
 
-function FlameNode(name::String)
-    return FlameNode(name, 0.0, 0.0, nothing, [])
+function FlameNode(node::Node)
+    return FlameNode(node, 0.0, 0.0, nothing, [])
 end
 
 function get_flame_graph(snapshot::HeapSnapshot)
@@ -21,11 +21,11 @@ function get_flame_graph(snapshot::HeapSnapshot)
     
     for edge in mst
         if !haskey(nodes, edge.dst)
-            nodes[edge.dst] = FlameNode(seq_to_node[edge.dst].type)
+            nodes[edge.dst] = FlameNode(seq_to_node[edge.dst])
         end
         push!(nodes_with_no_parent, edge.dst)
         if !haskey(nodes, edge.src)
-            nodes[edge.src] = FlameNode(seq_to_node[edge.src].type)
+            nodes[edge.src] = FlameNode(seq_to_node[edge.src])
         end
         push!(nodes_with_no_parent, edge.src)
     end
@@ -37,7 +37,13 @@ function get_flame_graph(snapshot::HeapSnapshot)
         delete!(nodes_with_no_parent, edge.dst)
         child.parent = parent
         push!(parent.children, child)
-        # parent.self_value += snapshot.edges[(edge.src, edge.dst)].self_size
+        # update values
+        cur = child
+        cur.self_value += cur.node.self_size
+        while cur != nothing
+            cur.total_value += cur.node.self_size
+            cur = cur.parent
+        end
     end
     
     @assert length(nodes_with_no_parent) == 1
@@ -48,8 +54,9 @@ end
 
 function as_json(node::FlameNode; depth=0, threshold=10000)
     return Dict(
-        "name" => node.name,
-        "value" => node.self_value,
+        "name" => node.node.type,
+        "self_value" => node.self_value,
+        "total_value" => node.total_value,
         "children" => if depth > threshold
             []
         else

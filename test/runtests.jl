@@ -12,3 +12,5 @@ snapshot = HeapSnapshotParser.parse_snapshot("../testdata/empty-repl.heapsnapsho
 flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
 @test length(flame_graph.children) > 0
 @test flame_graph.parent === nothing
+@test flame_graph.self_value > 0
+@test flame_graph.total_value > 0
