@@ -45,3 +45,15 @@ function get_flame_graph(snapshot::HeapSnapshot)
     root_id = collect(nodes_with_no_parent)[1]
     return nodes[root_id]
 end
+
+function as_json(node::FlameNode, depth=0, threshold=10000)
+    return Dict(
+        "name" => node.name,
+        "value" => node.self_value,
+        "children" => if depth > threshold
+            []
+        else
+            [as_json(child, depth+1) for child in node.children]
+        end
+    )
+end
