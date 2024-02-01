@@ -9,7 +9,7 @@ using StructEquality
 @struct_hash_equal Base.@kwdef struct Node{EdgeT}
     kind::Symbol
     type::String
-    id::Int
+    id::UInt64
     num_edges::Int
     self_size::Int
     out_edges::Array{EdgeT}
@@ -48,10 +48,14 @@ function parse_snapshot(file_path::String)::HeapSnapshot
 end
 
 function parse_snapshot(input::IOStream)::HeapSnapshot
+    @info "parsing JSON"
+    
     parsed = JSON.parse(input)
     snapshot = HeapSnapshot()
     nodes_vec = Vector{Node}()
 
+    @info "assembling nodes"
+    
     node_kind_enum = parsed["snapshot"]["meta"]["node_types"][1]
     edge_kind_enum = parsed["snapshot"]["meta"]["edge_types"][1]
 
@@ -77,6 +81,8 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
         snapshot.nodes[id] = node
         push!(nodes_vec, node)
     end
+    
+    @info "assembling edges"
     
     edges = parsed["edges"]
     edge_idx = 0
