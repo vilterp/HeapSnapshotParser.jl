@@ -34,16 +34,17 @@ end
 
 Base.@kwdef struct HeapSnapshot
     nodes::Dict{UInt64, Node{Edge}}
-    edges::Dict{Tuple{UInt64, UInt64}, Edge}
+    edges::Vector{Edge}
 end
 
 function HeapSnapshot()
     return HeapSnapshot(
         nodes=Dict{UInt64, Node{Edge}}(),
-        edges=Dict{Tuple{UInt64, UInt64}, Edge}(),
+        edges=Vector{Edge}(),
     )
 end
 
+#                    ,8,     4314,   4474241184,    57, 0,            0,               0
 const NODE_FIElDS = ["type", "name", "id", "self_size", "edge_count", "trace_node_id", "detachedness"]
 const NUM_NODE_FIELDS = length(NODE_FIElDS)
 
@@ -106,13 +107,14 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
 
             kind = Symbol(edge_kind_enum[kind_key + 1])
 
-            name = if kind == :internal
-                "<internal>"
-            elseif kind == :element
-                "<element>"
-            else
-                strings[name_key+1]
-            end
+            # name = if kind == :internal
+            #     "<internal>"
+            # elseif kind == :element
+            #     "<element>"
+            # else
+            #     strings[name_key+1]
+            # end
+            name = strings[name_key+1]
             to_node = nodes_vec[to_node_idx]
 
             edge = Edge(
@@ -122,7 +124,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
                 to=to_node,
             )
 
-            snapshot.edges[(from_node.id, to_node.id)] = edge
+            push!(snapshot.edges, edge)
             push!(from_node.out_edges, edge)
             push!(to_node.in_edges, edge)
             edge_idx += 1
