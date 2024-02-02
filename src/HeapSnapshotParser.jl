@@ -33,12 +33,14 @@ end
 
 Base.@kwdef struct HeapSnapshot
     nodes::Dict{UInt64, Node{Edge}}
+    nodes_vec::Vector{Node{Edge}}
     edges::Vector{Edge}
 end
 
 function HeapSnapshot()
     return HeapSnapshot(
         nodes=Dict{UInt64, Node{Edge}}(),
+        nodes_vec=Vector{Node{Edge}}(),
         edges=Vector{Edge}(),
     )
 end
@@ -61,7 +63,6 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
     
     parsed = JSON.parse(input)
     snapshot = HeapSnapshot()
-    nodes_vec = Vector{Node}()
 
     @info "assembling nodes"
     
@@ -89,20 +90,21 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
         )
 
         snapshot.nodes[id] = node
-        push!(nodes_vec, node)
+        push!(snapshot.nodes_vec, node)
     end
     
     @info "assembling edges"
     
     edges = parsed["edges"]
     edge_idx = 0
-    for from_node in values(snapshot.nodes)
+    for from_node in values(snapshot.nodes_vec)
         for edge_num = 1:(from_node.num_edges)
             kind_key = edges[edge_idx*NUM_EDGE_FIELDS + 1]
             name_key = edges[edge_idx*NUM_EDGE_FIELDS + 2]
             to_key = edges[edge_idx*NUM_EDGE_FIELDS + 3]
 
             to_node_idx = convert(UInt64, to_key/NUM_NODE_FIELDS) + 1
+            # @info "edge" from_node.id edge_idx to_node_idx
 
             kind = Symbol(edge_kind_enum[kind_key + 1])
 
@@ -114,7 +116,9 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             #     strings[name_key+1]
             # end
             name = strings[name_key+1]
-            to_node = nodes_vec[to_node_idx]
+            to_node = snapshot.nodes_vec[to_node_idx]
+            
+            # @info "to_node" snapshot.nodes_vec[to_node_idx]
 
             edge = Edge(
                 kind=kind,

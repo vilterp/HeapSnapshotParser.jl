@@ -84,7 +84,7 @@ function as_json(node::FlameNode; depth=0, threshold=10000)
         "self_value" => node.self_value,
         "total_value" => node.total_value,
         "num_children" => length(node.children),
-        "children" => if depth > threshold
+        "children" => if depth >= threshold
             Dict{String,Any}()
         else
             Dict{String,Any}(
