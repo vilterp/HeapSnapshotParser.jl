@@ -40,19 +40,19 @@ function get_flame_graph(snapshot::HeapSnapshot)
     # do DFS
     seen = Set{UInt64}()
     root_flame_node = flame_nodes[0]
-    stack = [StackFrame(root_flame_node)]
+    stack = Stack()
+    push!(stack, root_flame_node)
     
     @info "getting spanning tree"
     
     while !isempty(stack)
-        frame = stack[end]
-        node = frame.node
-        if frame.child_index > length(node.node.out_edges)
+        node, child_index = top(stack)
+        if child_index > length(node.node.out_edges)
             pop!(stack)
             continue
         end
-        edge = node.node.out_edges[frame.child_index]
-        frame.child_index += 1
+        edge = node.node.out_edges[child_index]
+        increment!(stack)
         if in(edge.to.id, seen)
             continue
         end
@@ -62,7 +62,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
         child.attr_name = edge.name
         push!(node.children, child)
         
-        push!(stack, StackFrame(child))
+        push!(stack, child)
     end
     
     @info "computing sizes"
