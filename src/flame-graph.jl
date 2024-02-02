@@ -67,18 +67,23 @@ end
 
 function compute_sizes!(root::FlameNode)
     stack = [StackFrame(root)]
+    return_value = 0
     while !isempty(stack)
         frame = stack[end]
         node = frame.node
+        node.total_value += return_value
+        return_value = 0
         
         if frame.child_index > length(node.children)
             pop!(stack)
+            return_value = node.total_value
             continue
         end
         
         child = node.children[frame.child_index]
         frame.child_index += 1
         
+        child.total_value = child.self_value
         push!(stack, StackFrame(child))
     end
 end
