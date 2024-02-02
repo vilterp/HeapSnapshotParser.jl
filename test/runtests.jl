@@ -14,59 +14,54 @@ using JSON
     @test flame_graph.parent === nothing
     # @test flame_graph.total_value > 0
 
-    dict = HeapSnapshotParser.as_json(flame_graph; threshold=1)
+    dict = HeapSnapshotParser.as_json(flame_graph; max_depth=1)
     @test length(dict["children"]) > 0
+    
+    println(JSON.json(dict, 4))
     
     expected = (
 """{
     "name": "",
-    "num_children": 6,
+    "num_children": 5,
     "self_value": 0,
-    "total_value": 0,
-    "children": {
-        "4: root task": {
-            "name": "Task",
+    "total_value": 1920,
+    "children": [
+        {
+            "name": "root task: Task",
             "num_children": 0,
-            "self_value": 0,
+            "self_value": 384,
             "total_value": 0,
-            "children": {}
+            "children": []
         },
-        "3: current task": {
-            "name": "Task",
+        {
+            "name": "root task: Task",
             "num_children": 0,
-            "self_value": 0,
+            "self_value": 384,
             "total_value": 0,
-            "children": {}
+            "children": []
         },
-        "0: root task": {
-            "name": "Task",
+        {
+            "name": "current task: Task",
             "num_children": 0,
-            "self_value": 0,
+            "self_value": 384,
             "total_value": 0,
-            "children": {}
+            "children": []
         },
-        "2: root task": {
-            "name": "Task",
+        {
+            "name": "root task: Task",
             "num_children": 0,
-            "self_value": 0,
+            "self_value": 384,
             "total_value": 0,
-            "children": {}
+            "children": []
         },
-        "1: current task": {
-            "name": "Task",
+        {
+            "name": "current task: Task",
             "num_children": 0,
-            "self_value": 0,
+            "self_value": 384,
             "total_value": 0,
-            "children": {}
-        },
-        "5: current task": {
-            "name": "Task",
-            "num_children": 0,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
+            "children": []
         }
-    }
+    ]
 }
 """)
     
@@ -85,7 +80,7 @@ end
     @test flame_graph.parent === nothing
     # @test flame_graph.total_value > 0
     
-    dict = HeapSnapshotParser.as_json(flame_graph; threshold=1)
+    dict = HeapSnapshotParser.as_json(flame_graph; max_depth=1)
     @test length(dict["children"]) > 0
     
     expected = (

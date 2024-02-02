@@ -1,18 +1,18 @@
 mutable struct FlameNode
     node::Node
+    attr_name::Union{Nothing,String}
     self_value::Int
     total_value::Int
     parent::Union{FlameNode,Nothing}
     children::Vector{FlameNode}
-    named_children::Dict{String,FlameNode}
 end
 
 function FlameNode(node::Node, self_size::Int)
-    return FlameNode(node, self_size, 0, nothing, Vector{FlameNode}(), Dict{String,FlameNode}())
+    return FlameNode(node, nothing, self_size, 0, nothing, Vector{FlameNode}())
 end
 
 function Base.show(io::IO, node::FlameNode)
-    print(io, "FlameNode($(node.node), $(node.self_value) self, $(node.total_value) total, $(length(node.children)) children)")
+    print(io, "FlameNode($(node.attr_name): $(node.node), $(node.self_value) self, $(node.total_value) total, $(length(node.children)) children)")
 end
 
 mutable struct StackFrame
@@ -52,8 +52,8 @@ function get_flame_graph(snapshot::HeapSnapshot)
         push!(seen, edge.to.id)
         child = flame_nodes[edge.to.id]
         child.parent = node
+        child.attr_name = edge.name
         push!(node.children, child)
-        node.named_children["$(frame.child_index): $(edge.name)"] = child
         
         # add to total value up the stack
         for frame in stack
@@ -73,29 +73,27 @@ end
 function as_json(node::FlameNode; cur_depth=0, max_depth=10000)
     children = get_relevant_children(node; cur_depth=cur_depth, max_depth=max_depth)
     return Dict(
-        "name" => node.node.type,
+        "name" => if node.attr_name === nothing
+            node.node.type
+        else
+            "$(node.attr_name): $(node.node.type)"
+        end,
         "self_value" => node.self_value,
         "total_value" => node.total_value,
         "num_children" => length(node.children),
         "children" => [
-            Dict(
-                "attr" => name,
-                "child" => as_json(child; cur_depth=cur_depth+1, max_depth=max_depth)
-            ) for (name, child) in children
+            as_json(child; cur_depth=cur_depth+1, max_depth=max_depth)
+            for child in children
         ]
     )
 end
 
+# return the top 10 nodes by total value
+# TODO: "rest" node
 function get_relevant_children(node::FlameNode; cur_depth=0, max_depth=10000, top_n=5)
     if cur_depth > max_depth
         return []
     end
-    # return the top 10 nodes by total value
-    # TODO: "rest" ndoe
-    sorted_pairs = sort(
-        collect(node.named_children),
-        by=child->child[2].total_value,
-        rev=true,
-    )
-    return sorted_pairs[1:min(end, top_n)]
+    sorted = sort(node.children, by=child -> child.total_value, rev=true)
+    return first(sorted, top_n)
 end
