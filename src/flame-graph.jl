@@ -35,7 +35,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
     root_flame_node = flame_nodes[0]
     stack = [StackFrame(root_flame_node)]
     
-    @info "doing DFS"
+    @info "getting spanning tree"
     
     while !isempty(stack)
         frame = stack[end]
@@ -58,7 +58,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
     
     @info "computing sizes"
     
-    compute_sizes!(root_flame_node)
+    # compute_sizes!(root_flame_node)
     
     return root_flame_node
 end
@@ -69,6 +69,11 @@ function compute_sizes!(root::FlameNode)
     while !isempty(stack)
         frame = stack[end]
         node = frame.node
+        
+        # add self size to ancestors' total size
+        for frame in stack
+            frame.node.total_value += node.self_value
+        end
         
         if frame.child_index > length(node.children)
             # done with this node
