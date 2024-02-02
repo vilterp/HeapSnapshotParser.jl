@@ -3,12 +3,12 @@ mutable struct FlameNode
     self_value::Int
     total_value::Int
     parent::Union{FlameNode,Nothing}
-    # TODO: name for each child
     children::Vector{FlameNode}
+    named_children::Dict{String,FlameNode}
 end
 
 function FlameNode(node::Node, self_size::Int)
-    return FlameNode(node, self_size, 0, nothing, Vector{FlameNode}())
+    return FlameNode(node, self_size, 0, nothing, Vector{FlameNode}(), Dict{String,FlameNode}())
 end
 
 function Base.show(io::IO, node::FlameNode)
@@ -53,6 +53,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
         child = flame_nodes[edge.to.id]
         child.parent = node
         push!(node.children, child)
+        node.named_children[edge.name] = child
         
         # add to total value up the stack
         for frame in stack
@@ -70,18 +71,23 @@ function get_flame_graph(snapshot::HeapSnapshot)
 end
 
 function as_json(node::FlameNode; depth=0, threshold=10000)
+    children = get_relevant_children(node; depth=depth, threshold=threshold)
     return Dict(
         "name" => node.node.type,
         "self_value" => node.self_value,
         "total_value" => node.total_value,
         "num_children" => length(node.children),
-        "children" => if depth >= threshold
-            []
-        else
-            [
-                as_json(child; depth=depth+1, threshold=threshold)
-                for child in node.children
-            ]
-        end
+        "children" => [
+            as_json(child; depth=depth+1, threshold=threshold)
+            for child in children
+        ]
     )
+end
+
+function get_relevant_children(node::FlameNode; depth=0, threshold=10000)
+    if depth > threshold
+        return []
+    end
+    # return the top 10 nodes by total value
+    return sort(node.children, by=child -> child.total_value, rev=true)
 end
