@@ -24,11 +24,18 @@ function StackFrame(node::FlameNode)
     return StackFrame(node, 1)
 end
 
-function get_flame_graph(snapshot::HeapSnapshot)
+function assemble_flame_nodes(snapshot::HeapSnapshot)
     flame_nodes = Dict{UInt64,FlameNode}()
     for node in values(snapshot.nodes)
         flame_nodes[node.id] = FlameNode(node, node.self_size)
     end
+    return flame_nodes
+end
+
+function get_flame_graph(snapshot::HeapSnapshot)
+    @info "assembling flame nodes"
+
+    @time flame_nodes = assemble_flame_nodes(snapshot)
     
     # do DFS
     seen = Set{UInt64}()
@@ -66,25 +73,25 @@ function get_flame_graph(snapshot::HeapSnapshot)
 end
 
 function compute_sizes!(root::FlameNode)
-    stack = [StackFrame(root)]
+    stack = Stack()
+    push!(stack, root)
     return_value = 0
     while !isempty(stack)
-        frame = stack[end]
-        node = frame.node
+        (node, child_index) = top(stack)
         node.total_value += return_value
         return_value = 0
         
-        if frame.child_index > length(node.children)
+        if child_index > length(node.children)
             pop!(stack)
             return_value = node.total_value
             continue
         end
         
-        child = node.children[frame.child_index]
-        frame.child_index += 1
+        child = node.children[child_index]
+        increment!(stack)
         
         child.total_value = child.self_value
-        push!(stack, StackFrame(child))
+        push!(stack, child)
     end
 end
 
@@ -114,4 +121,41 @@ function get_relevant_children(node::FlameNode; cur_depth=0, max_depth=10000, to
     end
     sorted = sort(node.children, by=child -> child.total_value, rev=true)
     return first(sorted, top_n)
+end
+
+# ====== stack
+
+struct Stack
+    nodes::Vector{FlameNode}
+    child_indices::Vector{Int}
+    
+    function Stack()
+        return new(Vector{FlameNode}(), Vector{Int}())
+    end
+end
+
+function Base.push!(stack::Stack, node::FlameNode)
+    push!(stack.nodes, node)
+    push!(stack.child_indices, 1)
+end
+
+function Base.pop!(stack::Stack)
+    node = pop!(stack.nodes)
+    idx = pop!(stack.child_indices)
+    return (node, idx)
+end
+
+function increment!(stack::Stack)
+    stack.child_indices[end] += 1
+end
+
+function Base.isempty(stack::Stack)
+    return Base.isempty(stack.nodes)
+end
+
+function top(stack::Stack)
+    return (
+        stack.nodes[end],
+        stack.child_indices[end],
+    )
 end
