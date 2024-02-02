@@ -4,20 +4,21 @@ mutable struct FlameNode
     total_value::Int
     parent::Union{FlameNode,Nothing}
     children::Dict{String,FlameNode}
+    children_vec::Vector{FlameNode}
+end
+
+function FlameNode(node::Node, self_size::Int)
+    return FlameNode(node, self_size, 0, nothing, Dict{String,FlameNode}(), Vector{FlameNode}())
 end
 
 function Base.show(io::IO, node::FlameNode)
     print(io, "FlameNode($(node.node), $(length(node.children)) children)")
 end
 
-function FlameNode(node::Node)
-    return FlameNode(node, 0, 0, nothing, Dict{String,FlameNode}())
-end
-
 function get_flame_graph(snapshot::HeapSnapshot)
     nodes = Dict{UInt64,FlameNode}()
     for node in values(snapshot.nodes)
-        nodes[node.id] = FlameNode(node)
+        nodes[node.id] = FlameNode(node, node.self_size)
     end
     
     # do DFS
@@ -39,15 +40,16 @@ function get_flame_graph(snapshot::HeapSnapshot)
             child = nodes[edge.to.id]
             child.parent = node
             node.children["$(i): $(edge.name)"] = child
+            push!(node.children_vec, child)
             push!(stack, child)
 
             i += 1
         end
     end
     
-    @info "computing timings"
+    @info "computing sizes"
     
-    compute_timings!(root_flame_node)
+    compute_sizes!(root_flame_node)
     
     return root_flame_node
 end
@@ -66,16 +68,30 @@ function find_unique_edge_name(node::FlameNode, name::String)
     end
 end
 
-function compute_timings!(node::FlameNode)
-    # stack = [node]
-    # while !isempty(stack)
-    #     node = pop!(stack)
-    #     node.total_value = node.self_value
-    #     for child in node.children
-    #         node.total_value += child.total_value
-    #         push!(stack, child)
-    #     end
-    # end
+mutable struct StackFrame
+    node::FlameNode
+    child_index::Int
+end
+
+function StackFrame(node::FlameNode)
+    return StackFrame(node, 1)
+end
+
+function compute_sizes!(root::FlameNode)
+    # visit all nodes
+    stack = [StackFrame(root)]
+    while !isempty(stack)
+        frame = stack[end]
+        node = frame.node
+        if frame.child_index > length(node.children)
+            # done with this node
+            pop!(stack)
+            continue
+        end
+        child = frame.node.children_vec[frame.child_index]
+        frame.child_index += 1
+        push!(stack, StackFrame(child))
+    end
 end
 
 function as_json(node::FlameNode; depth=0, threshold=10000)
