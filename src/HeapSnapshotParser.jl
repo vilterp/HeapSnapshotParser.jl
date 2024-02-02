@@ -1,6 +1,6 @@
 module HeapSnapshotParser
 
-using JSON
+using JSON3
 using StructEquality
 
 # Using a type parameter to avoid mutually recursive struct
@@ -44,6 +44,12 @@ function HeapSnapshot()
     )
 end
 
+struct RawSnapshot
+    nodes::Vector{Int}
+    edges::Vector{Int}
+    strings::Vector{String}
+end
+
 #                    ,8,     4314,   4474241184,    57, 0,            0,               0
 const NODE_FIElDS = ["type", "name", "id", "self_size", "edge_count", "trace_node_id", "detachedness"]
 const NUM_NODE_FIELDS = length(NODE_FIElDS)
@@ -60,7 +66,12 @@ end
 function parse_snapshot(input::IOStream)::HeapSnapshot
     @info "parsing JSON"
     
-    parsed = JSON.parse(input)
+    parsed = JSON3.read(input, RawSnapshot)
+    
+    return assemble_snapshot(parsed)
+end
+
+function assemble_snapshot(parsed::RawSnapshot)
     snapshot = HeapSnapshot()
 
     @info "assembling nodes"
@@ -130,7 +141,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             edge_idx += 1
         end
     end
-
+    
     return snapshot
 end
 
