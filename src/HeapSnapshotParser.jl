@@ -5,14 +5,14 @@ using StructEquality
 
 # Using a type parameter to avoid mutually recursive struct
 # declarations, which Julia doesn't support https://github.com/JuliaLang/julia/issues/269
-@struct_hash_equal Base.@kwdef struct Node{EdgeT}
+@struct_hash_equal Base.@kwdef struct Node
     kind::Symbol
     type::String
     id::UInt64
     num_edges::Int
     self_size::Int
-    out_edges::Vector{EdgeT}
-    in_edges::Vector{EdgeT}
+    out_edges::Vector{Int}
+    in_edges::Vector{Int}
 end
 
 function Base.show(io::IO, node::Node)
@@ -32,15 +32,15 @@ function Base.show(io::IO, edge::Edge)
 end
 
 Base.@kwdef struct HeapSnapshot
-    nodes::Dict{UInt64, Node{Edge}}
-    nodes_vec::Vector{Node{Edge}}
+    nodes::Dict{UInt64, Node}
+    nodes_vec::Vector{Node}
     edges::Vector{Edge}
 end
 
 function HeapSnapshot()
     return HeapSnapshot(
-        nodes=Dict{UInt64, Node{Edge}}(),
-        nodes_vec=Vector{Node{Edge}}(),
+        nodes=Dict{UInt64, Node}(),
+        nodes_vec=Vector{Node}(),
         edges=Vector{Edge}(),
     )
 end
@@ -79,7 +79,7 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
         self_size = nodes[node_idx*NUM_NODE_FIELDS + 4]
         num_edges = nodes[node_idx*NUM_NODE_FIELDS + 5]
 
-        node = Node{Edge}(
+        node = Node(
             kind=Symbol(node_kind_enum[kind_key + 1]),
             type=strings[name_key + 1],
             num_edges=num_edges,
@@ -128,8 +128,8 @@ function parse_snapshot(input::IOStream)::HeapSnapshot
             )
 
             push!(snapshot.edges, edge)
-            push!(from_node.out_edges, edge)
-            push!(to_node.in_edges, edge)
+            push!(from_node.out_edges, edge_idx + 1)
+            push!(to_node.in_edges, edge_idx + 1)
             edge_idx += 1
         end
     end
@@ -147,16 +147,6 @@ function live_bytes(snapshot::HeapSnapshot)::Int
         sum += node.self_size
     end
     return sum
-end
-
-# need this because we can't store the edges directly on the node
-function out_edges(snapshot::HeapSnapshot, node::Node)::Array{Edge}
-    out = Edge[]
-    for edge_idx in node.out_edge_indexes
-        edge = snapshot.edges[edge_idx]
-        push!(out, edge)
-    end
-    return out
 end
 
 include("flame-graph.jl")

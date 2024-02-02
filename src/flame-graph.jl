@@ -51,7 +51,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
             pop!(stack)
             continue
         end
-        edge = node.node.out_edges[child_index]
+        edge = snapshot.edges[node.node.out_edges[child_index]]
         increment!(stack)
         if in(edge.to.id, seen)
             continue
