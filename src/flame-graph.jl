@@ -53,6 +53,12 @@ function get_flame_graph(snapshot::HeapSnapshot)
         child = flame_nodes[edge.to.id]
         child.parent = node
         push!(node.children, child)
+        
+        # add to total value up the stack
+        for frame in stack
+            frame.node.total_value += child.self_value
+        end
+        
         push!(stack, StackFrame(child))
     end
     
@@ -61,29 +67,6 @@ function get_flame_graph(snapshot::HeapSnapshot)
     # compute_sizes!(root_flame_node)
     
     return root_flame_node
-end
-
-function compute_sizes!(root::FlameNode)
-    # visit all nodes
-    stack = [StackFrame(root)]
-    while !isempty(stack)
-        frame = stack[end]
-        node = frame.node
-        
-        # add self size to ancestors' total size
-        for frame in stack
-            frame.node.total_value += node.self_value
-        end
-        
-        if frame.child_index > length(node.children)
-            # done with this node
-            pop!(stack)
-            continue
-        end
-        child = frame.node.children[frame.child_index]
-        frame.child_index += 1
-        push!(stack, StackFrame(child))
-    end
 end
 
 function as_json(node::FlameNode; depth=0, threshold=10000)
