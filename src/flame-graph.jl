@@ -1,5 +1,5 @@
 mutable struct FlameNode
-    node::Node
+    node_idx::Int
     attr_name::Union{Nothing,String}
     self_value::Int
     total_value::Int
@@ -7,8 +7,8 @@ mutable struct FlameNode
     children::Vector{FlameNode}
 end
 
-function FlameNode(node::Node, self_size::Int)
-    return FlameNode(node, nothing, self_size, 0, nothing, Vector{FlameNode}())
+function FlameNode(node_idx::NodeIdx, self_size::Int)
+    return FlameNode(node_idx, nothing, self_size, 0, nothing, Vector{FlameNode}())
 end
 
 function Base.show(io::IO, node::FlameNode)
@@ -24,15 +24,17 @@ function StackFrame(node::FlameNode)
     return StackFrame(node, 1)
 end
 
-function assemble_flame_nodes(snapshot::HeapSnapshot)
+function assemble_flame_nodes(snapshot::IndexedSnapshot)
     flame_nodes = Dict{UInt64,FlameNode}()
-    for node in values(snapshot.nodes)
-        flame_nodes[node.id] = FlameNode(node, node.self_size)
+    for node_idx in node_indexes(snapshot.raw_snapshot)
+        id = get_node_id(snapshot.raw_snapshot, node_idx)
+        self_size = get_node_self_size(snapshot.raw_snapshot, node_idx)
+        flame_nodes[id] = FlameNode(node_idx, self_size)
     end
     return flame_nodes
 end
 
-function get_flame_graph(snapshot::HeapSnapshot, indexed_snapshot::IndexedSnapshot)
+function get_flame_graph(snapshot::IndexedSnapshot)
     @info "assembling flame nodes"
 
     @time flame_nodes = assemble_flame_nodes(snapshot)
