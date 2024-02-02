@@ -30,35 +30,35 @@ using JSON
             "name": "root task: Task",
             "num_children": 0,
             "self_value": 384,
-            "total_value": 0,
+            "total_value": 384,
             "children": []
         },
         {
             "name": "root task: Task",
             "num_children": 0,
             "self_value": 384,
-            "total_value": 0,
+            "total_value": 384,
             "children": []
         },
         {
             "name": "current task: Task",
             "num_children": 0,
             "self_value": 384,
-            "total_value": 0,
+            "total_value": 384,
             "children": []
         },
         {
             "name": "root task: Task",
             "num_children": 0,
             "self_value": 384,
-            "total_value": 0,
+            "total_value": 384,
             "children": []
         },
         {
             "name": "current task: Task",
             "num_children": 0,
             "self_value": 384,
-            "total_value": 0,
+            "total_value": 384,
             "children": []
         }
     ]
