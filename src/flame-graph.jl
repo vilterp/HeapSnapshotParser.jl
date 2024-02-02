@@ -70,24 +70,25 @@ function get_flame_graph(snapshot::HeapSnapshot)
     return root_flame_node
 end
 
-function as_json(node::FlameNode; depth=0, threshold=10000)
-    children = get_relevant_children(node; depth=depth, threshold=threshold)
+function as_json(node::FlameNode; cur_depth=0, max_depth=10000)
+    children = get_relevant_children(node; cur_depth=cur_depth, max_depth=max_depth)
     return Dict(
         "name" => node.node.type,
         "self_value" => node.self_value,
         "total_value" => node.total_value,
         "num_children" => length(node.children),
         "children" => [
-            as_json(child; depth=depth+1, threshold=threshold)
+            as_json(child; cur_depth=depth+1, max_depth=max_depth)
             for child in children
         ]
     )
 end
 
-function get_relevant_children(node::FlameNode; depth=0, threshold=10000)
-    if depth > threshold
+function get_relevant_children(node::FlameNode; cur_depth=0, max_depth=10000)
+    if cur_depth > max_depth
         return []
     end
+    # TODO: "rest" ndoe
     # return the top 10 nodes by total value
     return sort(node.children, by=child -> child.total_value, rev=true)
 end
