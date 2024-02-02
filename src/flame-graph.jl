@@ -15,64 +15,6 @@ function Base.show(io::IO, node::FlameNode)
     print(io, "FlameNode($(node.node), $(length(node.children)) children)")
 end
 
-function get_flame_graph(snapshot::HeapSnapshot)
-    nodes = Dict{UInt64,FlameNode}()
-    for node in values(snapshot.nodes)
-        nodes[node.id] = FlameNode(node, node.self_size)
-    end
-    
-    # do DFS
-    seen = Set{UInt64}()
-    root_flame_node = nodes[0]
-    stack = [root_flame_node]
-    
-    @info "doing DFS"
-    @info "starting with node" root_flame_node.node.id
-    
-    while !isempty(stack)
-        node = pop!(stack)
-        if in(node.node.id, seen)
-            continue
-        end
-        push!(seen, node.node.id)
-        
-        if length(stack) > 0
-            parent = stack[end]
-            @info "marking $(parent.node.id) as the parent of $(node.node.id)"
-            node.parent = parent
-            push!(parent.children, node)
-        end
-        
-        i = 0
-        for edge in node.node.out_edges
-            child = nodes[edge.to.id]
-            push!(stack, child)
-
-            i += 1
-        end
-    end
-    
-    @info "computing sizes"
-    
-    compute_sizes!(root_flame_node)
-    
-    return root_flame_node
-end
-
-function find_unique_edge_name(node::FlameNode, name::String)
-    if !haskey(node.children, name)
-        return name
-    end
-    i = 1
-    while true
-        new_name = "$name-$i"
-        if !haskey(node.children, new_name)
-            return new_name
-        end
-        i += 1
-    end
-end
-
 mutable struct StackFrame
     node::FlameNode
     child_index::Int
@@ -80,6 +22,46 @@ end
 
 function StackFrame(node::FlameNode)
     return StackFrame(node, 1)
+end
+
+function get_flame_graph(snapshot::HeapSnapshot)
+    flame_nodes = Dict{UInt64,FlameNode}()
+    for node in values(snapshot.nodes)
+        flame_nodes[node.id] = FlameNode(node, node.self_size)
+    end
+    
+    # do DFS
+    seen = Set{UInt64}()
+    root_flame_node = flame_nodes[0]
+    stack = [StackFrame(root_flame_node)]
+    
+    @info "doing DFS"
+    @info "starting with node" root_flame_node.node.id
+    
+    while !isempty(stack)
+        frame = stack[end]
+        node = frame.node
+        if frame.child_index > length(node.node.out_edges)
+            pop!(stack)
+            continue
+        end
+        edge = node.node.out_edges[frame.child_index]
+        frame.child_index += 1
+        if in(edge.to.id, seen)
+            continue
+        end
+        push!(seen, edge.to.id)
+        child = flame_nodes[edge.to.id]
+        child.parent = node
+        push!(node.children, child)
+        push!(stack, StackFrame(child))
+    end
+    
+    @info "computing sizes"
+    
+    compute_sizes!(root_flame_node)
+    
+    return root_flame_node
 end
 
 function compute_sizes!(root::FlameNode)
