@@ -88,11 +88,11 @@ function assemble_snapshot(parsed::RawSnapshot)
 
     @info "assembling nodes"
     
-    node_kind_enum = parsed["snapshot"]["meta"]["node_types"][1]
-    edge_kind_enum = parsed["snapshot"]["meta"]["edge_types"][1]
+    node_kind_enum = parsed.snapshot.meta.node_types[1]
+    edge_kind_enum = parsed.snapshot.meta.edge_types[1]
 
-    nodes = parsed["nodes"]
-    strings = parsed["strings"]
+    nodes = parsed.nodes
+    strings = parsed.strings
     num_nodes = convert(Int, length(nodes)/NUM_NODE_FIELDS)
     for node_idx = 0:(num_nodes-1)
         kind_key = nodes[node_idx*NUM_NODE_FIELDS + 1]
@@ -116,7 +116,7 @@ function assemble_snapshot(parsed::RawSnapshot)
     
     @info "assembling edges"
     
-    edges = parsed["edges"]
+    edges = parsed.edges
     edge_idx = 0
     for from_node in values(snapshot.nodes_vec)
         for edge_num = 1:(from_node.num_edges)
