@@ -1,3 +1,5 @@
+const NodeIdx = Int
+
 struct RawSnapshotMeta
     node_fields::Vector{String}
     node_types::Vector{Union{String, Vector{String}}}
@@ -27,7 +29,7 @@ end
 function build_indexes(raw_snapshot::RawSnapshot)
     edges_start_by_node_idx = Vector{Int}()
     
-    num_nodes = length(raw_snapshot.nodes) / NUM_NODE_FIELDS
+    num_nodes = div(length(raw_snapshot.nodes), NUM_NODE_FIELDS)
     
     node_idx = 0
     edge_start = 0
@@ -43,18 +45,33 @@ function build_indexes(raw_snapshot::RawSnapshot)
     return IndexedSnapshot(raw_snapshot, edges_start_by_node_idx)
 end
 
+# iterators
+
+function node_indexes(snapshot::RawSnapshot)
+    return 1:div(length(snapshot.nodes), NUM_NODE_FIELDS)
+end
+
+function edge_indexes(snapshot::RawSnapshot)
+    return 1:div(length(snapshot.edges), NUM_EDGE_FIELDS)
+end
+
 # getters
 
 function get_node_name(snapshot::RawSnapshot, node_idx::Int)
-    return snapshot.strings[
-        node_idx * NUM_NODE_FIELDS + 2
-    ]
+    string_idx = snapshot.nodes[node_idx * NUM_NODE_FIELDS + 2]
+    return snapshot.strings[string_idx]
+end
+
+function get_node_id(snapshot::RawSnapshot, node_idx::Int)
+    return snapshot.nodes[node_idx*NUM_NODE_FIELDS + 3]
+end
+
+function get_node_self_size(snapshot::RawSnapshot, node_idx::Int)
+    return snapshot.nodes[node_idx*NUM_NODE_FIELDS + 4]
 end
 
 function get_node_num_edges(snapshot::RawSnapshot, node_idx::Int)
-    return snapshot.nodes[
-        node_idx * NUM_NODE_FIELDS + 5
-    ]
+    return snapshot.nodes[node_idx * NUM_NODE_FIELDS + 5]
 end
 
 function get_node_out_edges(snapshot::RawSnapshot, node_idx::Int)

@@ -65,7 +65,7 @@ function parse_snapshot(input::IOStream)
     parsed = JSON3.read(input, RawSnapshot)
     indexed = build_indexes(parsed)
     
-    return assemble_snapshot(parsed), indexed
+    return indexed
 end
 
 function assemble_snapshot(parsed::RawSnapshot)
