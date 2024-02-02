@@ -12,7 +12,7 @@ function FlameNode(node::Node, self_size::Int)
 end
 
 function Base.show(io::IO, node::FlameNode)
-    print(io, "FlameNode($(node.node), $(length(node.children)) children)")
+    print(io, "FlameNode($(node.node), $(node.self_value) self, $(node.total_value) total, $(length(node.children)) children)")
 end
 
 mutable struct StackFrame
@@ -36,7 +36,6 @@ function get_flame_graph(snapshot::HeapSnapshot)
     stack = [StackFrame(root_flame_node)]
     
     @info "doing DFS"
-    @info "starting with node" root_flame_node.node.id
     
     while !isempty(stack)
         frame = stack[end]
@@ -66,17 +65,10 @@ end
 
 function compute_sizes!(root::FlameNode)
     # visit all nodes
-    iteration = 0
     stack = [StackFrame(root)]
     while !isempty(stack)
-        iteration += 1
-        
         frame = stack[end]
         node = frame.node
-        
-        if iteration % 1000 == 0
-            @info "iteration" iteration depth=length(stack) id=frame.node.node.id
-        end
         
         if frame.child_index > length(node.children)
             # done with this node
