@@ -83,77 +83,74 @@ end
     dict = HeapSnapshotParser.as_json(flame_graph; max_depth=1)
     @test length(dict["children"]) > 0
     
+    println(JSON.json(dict, 4))
+    
     expected = (
 """{
     "name": "",
-    "num_children": 9,
+    "num_children": 4,
     "self_value": 0,
-    "total_value": 0,
-    "children": {
-        "7: current task": {
-            "name": "Task",
-            "num_children": 7,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
+    "total_value": 146190524,
+    "children": [
+        {
+            "name": "root task: Task",
+            "num_children": 3,
+            "self_value": 384,
+            "total_value": 146189345,
+            "children": [
+                {
+                    "name": "stack: (stack frame)",
+                    "num_children": 2,
+                    "self_value": 1,
+                    "total_value": 146188624,
+                    "children": []
+                },
+                {
+                    "name": "storage: Base.IdDict{Any, Any}",
+                    "num_children": 1,
+                    "self_value": 32,
+                    "total_value": 336,
+                    "children": []
+                },
+                {
+                    "name": "stack: (stack frame)",
+                    "num_children": 0,
+                    "self_value": 1,
+                    "total_value": 1,
+                    "children": []
+                }
+            ]
         },
-        "4: root task": {
-            "name": "Task",
-            "num_children": 6,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
+        {
+            "name": "root task: Task",
+            "num_children": 1,
+            "self_value": 384,
+            "total_value": 411,
+            "children": [
+                {
+                    "name": "stack: (stack frame)",
+                    "num_children": 2,
+                    "self_value": 1,
+                    "total_value": 27,
+                    "children": []
+                }
+            ]
         },
-        "3: current task": {
-            "name": "Task",
-            "num_children": 8,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
+        {
+            "name": "root task: Task",
+            "num_children": 0,
+            "self_value": 384,
+            "total_value": 384,
+            "children": []
         },
-        "8: main_module": {
-            "name": "Main",
-            "num_children": 32,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
-        },
-        "6: root task": {
-            "name": "Task",
-            "num_children": 7,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
-        },
-        "0: root task": {
-            "name": "Task",
-            "num_children": 8,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
-        },
-        "2: root task": {
-            "name": "Task",
-            "num_children": 6,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
-        },
-        "1: current task": {
-            "name": "Task",
-            "num_children": 8,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
-        },
-        "5: current task": {
-            "name": "Task",
-            "num_children": 8,
-            "self_value": 0,
-            "total_value": 0,
-            "children": {}
+        {
+            "name": "root task: Task",
+            "num_children": 0,
+            "self_value": 384,
+            "total_value": 384,
+            "children": []
         }
-    }
+    ]
 }
 """)
     
