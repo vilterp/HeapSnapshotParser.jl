@@ -44,24 +44,6 @@ function HeapSnapshot()
     )
 end
 
-struct RawSnapshotMeta
-    node_fields::Vector{String}
-    node_types::Vector{Union{String, Vector{String}}}
-    edge_fields::Vector{String}
-    edge_types::Vector{Union{String, Vector{String}}}
-end
-
-struct RawSnapshotSnapshot
-    meta::RawSnapshotMeta
-end
-
-struct RawSnapshot
-    snapshot::RawSnapshotSnapshot
-    nodes::Vector{Int}
-    edges::Vector{Int}
-    strings::Vector{String}
-end
-
 #                    ,8,     4314,   4474241184,    57, 0,            0,               0
 const NODE_FIElDS = ["type", "name", "id", "self_size", "edge_count", "trace_node_id", "detachedness"]
 const NUM_NODE_FIELDS = length(NODE_FIElDS)
@@ -169,6 +151,7 @@ function live_bytes(snapshot::HeapSnapshot)::Int
     return sum
 end
 
+include("raw-snapshot.jl")
 include("flame-graph.jl")
 
 end # module
