@@ -53,7 +53,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
         child = flame_nodes[edge.to.id]
         child.parent = node
         push!(node.children, child)
-        node.named_children[edge.name] = child
+        node.named_children["$(frame.child_index): $(edge.name)"] = child
         
         # add to total value up the stack
         for frame in stack
@@ -78,17 +78,24 @@ function as_json(node::FlameNode; cur_depth=0, max_depth=10000)
         "total_value" => node.total_value,
         "num_children" => length(node.children),
         "children" => [
-            as_json(child; cur_depth=depth+1, max_depth=max_depth)
-            for child in children
+            Dict(
+                "attr" => name,
+                "child" => as_json(child; cur_depth=cur_depth+1, max_depth=max_depth)
+            ) for (name, child) in children
         ]
     )
 end
 
-function get_relevant_children(node::FlameNode; cur_depth=0, max_depth=10000)
+function get_relevant_children(node::FlameNode; cur_depth=0, max_depth=10000, top_n=5)
     if cur_depth > max_depth
         return []
     end
-    # TODO: "rest" ndoe
     # return the top 10 nodes by total value
-    return sort(node.children, by=child -> child.total_value, rev=true)
+    # TODO: "rest" ndoe
+    sorted_pairs = sort(
+        collect(node.named_children),
+        by=child->child[2].total_value,
+        rev=true,
+    )
+    return sorted_pairs[1:min(end, top_n)]
 end
