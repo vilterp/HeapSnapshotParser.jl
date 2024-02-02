@@ -32,7 +32,7 @@ function assemble_flame_nodes(snapshot::HeapSnapshot)
     return flame_nodes
 end
 
-function get_flame_graph(snapshot::HeapSnapshot)
+function get_flame_graph(snapshot::HeapSnapshot, indexed_snapshot::IndexedSnapshot)
     @info "assembling flame nodes"
 
     @time flame_nodes = assemble_flame_nodes(snapshot)
