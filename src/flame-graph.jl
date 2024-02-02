@@ -3,12 +3,12 @@ mutable struct FlameNode
     self_value::Int
     total_value::Int
     parent::Union{FlameNode,Nothing}
-    children::Dict{String,FlameNode}
-    children_vec::Vector{FlameNode}
+    # TODO: name for each child
+    children::Vector{FlameNode}
 end
 
 function FlameNode(node::Node, self_size::Int)
-    return FlameNode(node, self_size, 0, nothing, Dict{String,FlameNode}(), Vector{FlameNode}())
+    return FlameNode(node, self_size, 0, nothing, Vector{FlameNode}())
 end
 
 function Base.show(io::IO, node::FlameNode)
@@ -27,6 +27,7 @@ function get_flame_graph(snapshot::HeapSnapshot)
     stack = [root_flame_node]
     
     @info "doing DFS"
+    @info "starting with node" root_flame_node.node.id
     
     while !isempty(stack)
         node = pop!(stack)
@@ -35,12 +36,16 @@ function get_flame_graph(snapshot::HeapSnapshot)
         end
         push!(seen, node.node.id)
         
+        if length(stack) > 0
+            parent = stack[end]
+            @info "marking $(parent.node.id) as the parent of $(node.node.id)"
+            node.parent = parent
+            push!(parent.children, node)
+        end
+        
         i = 0
         for edge in node.node.out_edges
             child = nodes[edge.to.id]
-            child.parent = node
-            node.children["$(i): $(edge.name)"] = child
-            push!(node.children_vec, child)
             push!(stack, child)
 
             i += 1
@@ -79,16 +84,24 @@ end
 
 function compute_sizes!(root::FlameNode)
     # visit all nodes
+    iteration = 0
     stack = [StackFrame(root)]
     while !isempty(stack)
+        iteration += 1
+        
         frame = stack[end]
         node = frame.node
+        
+        if iteration % 1000 == 0
+            @info "iteration" iteration depth=length(stack) id=frame.node.node.id
+        end
+        
         if frame.child_index > length(node.children)
             # done with this node
             pop!(stack)
             continue
         end
-        child = frame.node.children_vec[frame.child_index]
+        child = frame.node.children[frame.child_index]
         frame.child_index += 1
         push!(stack, StackFrame(child))
     end
@@ -101,12 +114,12 @@ function as_json(node::FlameNode; depth=0, threshold=10000)
         "total_value" => node.total_value,
         "num_children" => length(node.children),
         "children" => if depth >= threshold
-            Dict{String,Any}()
+            []
         else
-            Dict{String,Any}(
-                name => as_json(child; depth=depth+1, threshold=threshold)
-                for (name, child) in node.children
-            )
+            [
+                as_json(child; depth=depth+1, threshold=threshold)
+                for child in node.children
+            ]
         end
     )
 end
