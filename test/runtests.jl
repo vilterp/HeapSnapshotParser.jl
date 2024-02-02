@@ -3,13 +3,13 @@ using Test
 using JSON
 
 @testset "tiny" begin
-    snapshot = HeapSnapshotParser.parse_snapshot("../testdata/tiny.heapsnapshot")
+    snapshot, indexed = HeapSnapshotParser.parse_snapshot("../testdata/tiny.heapsnapshot")
     @test length(snapshot.nodes) > 0
     @test length(snapshot.edges) > 0
 
     @info "getting flame graph"
 
-    flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
+    flame_graph = HeapSnapshotParser.get_flame_graph(snapshot, indexed)
     @test length(flame_graph.children) > 0
     @test flame_graph.parent === nothing
     # @test flame_graph.total_value > 0
@@ -69,13 +69,13 @@ using JSON
 end
 
 @testset "big" begin
-    snapshot = HeapSnapshotParser.parse_snapshot("../Snapshot.heapsnapshot")
+    snapshot, indexed = HeapSnapshotParser.parse_snapshot("../Snapshot.heapsnapshot")
     @test length(snapshot.nodes) > 0
     @test length(snapshot.edges) > 0
     
     @info "getting flame graph"
 
-    flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
+    flame_graph = HeapSnapshotParser.get_flame_graph(snapshot, indexed)
     @test length(flame_graph.children) > 0
     @test flame_graph.parent === nothing
     # @test flame_graph.total_value > 0

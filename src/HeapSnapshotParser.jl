@@ -3,6 +3,8 @@ module HeapSnapshotParser
 using JSON3
 using StructEquality
 
+include("raw-snapshot.jl")
+
 # Using a type parameter to avoid mutually recursive struct
 # declarations, which Julia doesn't support https://github.com/JuliaLang/julia/issues/269
 @struct_hash_equal Base.@kwdef struct Node
@@ -51,18 +53,19 @@ const NUM_NODE_FIELDS = length(NODE_FIElDS)
 const EDGE_FIELDS = ["type", "name_or_index", "to_node"]
 const NUM_EDGE_FIELDS = length(EDGE_FIELDS)
 
-function parse_snapshot(file_path::String)::HeapSnapshot
+function parse_snapshot(file_path::String)
     open(file_path) do f
         return parse_snapshot(f)
     end
 end
 
-function parse_snapshot(input::IOStream)::HeapSnapshot
+function parse_snapshot(input::IOStream)
     @info "parsing JSON"
     
     parsed = JSON3.read(input, RawSnapshot)
+    indexed = build_indexes(parsed)
     
-    return assemble_snapshot(parsed)
+    return assemble_snapshot(parsed), indexed
 end
 
 function assemble_snapshot(parsed::RawSnapshot)
@@ -100,7 +103,7 @@ function assemble_snapshot(parsed::RawSnapshot)
     
     edges = parsed.edges
     edge_idx = 0
-    for from_node in values(snapshot.nodes_vec)
+    for from_node in snapshot.nodes_vec
         for edge_num = 1:(from_node.num_edges)
             kind_key = edges[edge_idx*NUM_EDGE_FIELDS + 1]
             name_key = edges[edge_idx*NUM_EDGE_FIELDS + 2]
@@ -151,7 +154,6 @@ function live_bytes(snapshot::HeapSnapshot)::Int
     return sum
 end
 
-include("raw-snapshot.jl")
 include("flame-graph.jl")
 
 end # module
