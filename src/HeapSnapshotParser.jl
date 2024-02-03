@@ -28,6 +28,7 @@ function parse_snapshot(input::IOStream)
 end
 
 function assemble_snapshot(raw::RawSnapshot)
+    # TODO: preallocate node and edge arrays
     snapshot = ParsedSnapshot()
 
     @info "assembling nodes"
@@ -38,20 +39,26 @@ function assemble_snapshot(raw::RawSnapshot)
     nodes = raw.nodes
     strings = raw.strings
     num_nodes = convert(Int, length(nodes)/NUM_NODE_FIELDS)
-    edge_idx = 0
+    edge_idx = 1
     for node_idx = 0:(num_nodes-1)
         kind_key = nodes[node_idx*NUM_NODE_FIELDS + 1]
         name_key = nodes[node_idx*NUM_NODE_FIELDS + 2]
         id = nodes[node_idx*NUM_NODE_FIELDS + 3]
         self_size = nodes[node_idx*NUM_NODE_FIELDS + 4]
         num_edges = nodes[node_idx*NUM_NODE_FIELDS + 5]
+        
+        edges_range = if num_edges == 0
+            1:0 # empty range
+        else
+            edge_idx:(edge_idx + num_edges - 1)
+        end
 
         node = RawNode(
             Symbol(node_kind_enum[kind_key + 1]),
             strings[name_key + 1],
             id,
             self_size,
-            edge_idx:(edge_idx + num_edges),
+            edges_range,
         )
         edge_idx += num_edges
 

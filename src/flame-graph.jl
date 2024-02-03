@@ -100,9 +100,9 @@ function as_json(node::FlameNode; cur_depth=0, max_depth=10000)
     children = get_relevant_children(node; cur_depth=cur_depth, max_depth=max_depth)
     return Dict(
         "name" => if node.attr_name === nothing
-            node.node.type
+            node.node.name
         else
-            "$(node.attr_name): $(node.node.type)"
+            "$(node.attr_name): $(node.node.name)"
         end,
         "self_value" => node.self_value,
         "total_value" => node.total_value,

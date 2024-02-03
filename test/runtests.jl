@@ -24,12 +24,12 @@ using JSON
     expected = (
 """{
     "name": "",
-    "num_children": 5,
+    "num_children": 6,
     "self_value": 0,
-    "total_value": 1920,
+    "total_value": 2304,
     "children": [
         {
-            "name": "root task: Task",
+            "name": "current task: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
