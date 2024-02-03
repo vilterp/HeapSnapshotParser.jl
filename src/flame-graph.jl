@@ -1,5 +1,5 @@
 mutable struct FlameNode
-    node_idx::Int
+    node::RawNode
     attr_name::Union{Nothing,String}
     self_value::Int
     total_value::Int
@@ -7,8 +7,8 @@ mutable struct FlameNode
     children::Vector{FlameNode}
 end
 
-function FlameNode(node_idx::NodeIdx, self_size::Int)
-    return FlameNode(node_idx, nothing, self_size, 0, nothing, Vector{FlameNode}())
+function FlameNode(node::RawNode)
+    return FlameNode(node, nothing, node.self_size, 0, nothing, Vector{FlameNode}())
 end
 
 function Base.show(io::IO, node::FlameNode)
@@ -24,25 +24,22 @@ function StackFrame(node::FlameNode)
     return StackFrame(node, 1)
 end
 
-function assemble_flame_nodes(snapshot::IndexedSnapshot)
+function assemble_flame_nodes(snapshot::ParsedSnapshot)
     flame_nodes = Dict{UInt64,FlameNode}()
-    for node_idx in node_indexes(snapshot.raw_snapshot)
-        println("node idx: ", node_idx)
-        id = get_node_id(snapshot.raw_snapshot, node_idx)
-        self_size = get_node_self_size(snapshot.raw_snapshot, node_idx)
-        flame_nodes[id] = FlameNode(node_idx, self_size)
+    for (idx, node) in enumerate(snapshot.nodes)
+        flame_nodes[idx] = FlameNode(node)
     end
     return flame_nodes
 end
 
-function get_flame_graph(snapshot::IndexedSnapshot)
+function get_flame_graph(snapshot::ParsedSnapshot)
     @info "assembling flame nodes"
 
     @time flame_nodes = assemble_flame_nodes(snapshot)
     
     # do DFS
-    seen = Set{UInt64}()
-    root_flame_node = flame_nodes[0]
+    seen = Set{UInt64}() # set of node indexes
+    root_flame_node = flame_nodes[1]
     stack = Stack()
     push!(stack, root_flame_node)
     
@@ -50,17 +47,18 @@ function get_flame_graph(snapshot::IndexedSnapshot)
     
     while !isempty(stack)
         node, child_index = top(stack)
-        if child_index > length(node.node.out_edges)
+        if child_index > length(node.node.edge_indexes)
             pop!(stack)
             continue
         end
-        edge = snapshot.edges[node.node.out_edges[child_index]]
+        edge_idx = node.node.edge_indexes[child_index]
+        edge = snapshot.edges[edge_idx]
         increment!(stack)
-        if in(edge.to.id, seen)
+        if in(edge.to, seen)
             continue
         end
-        push!(seen, edge.to.id)
-        child = flame_nodes[edge.to.id]
+        push!(seen, edge.to)
+        child = flame_nodes[edge.to]
         child.parent = node
         child.attr_name = edge.name
         push!(node.children, child)
