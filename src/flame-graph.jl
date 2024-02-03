@@ -27,6 +27,7 @@ end
 function assemble_flame_nodes(snapshot::IndexedSnapshot)
     flame_nodes = Dict{UInt64,FlameNode}()
     for node_idx in node_indexes(snapshot.raw_snapshot)
+        println("node idx: ", node_idx)
         id = get_node_id(snapshot.raw_snapshot, node_idx)
         self_size = get_node_self_size(snapshot.raw_snapshot, node_idx)
         flame_nodes[id] = FlameNode(node_idx, self_size)
