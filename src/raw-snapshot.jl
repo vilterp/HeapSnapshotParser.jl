@@ -63,6 +63,7 @@ function get_node_name(snapshot::RawSnapshot, node_idx::Int)
 end
 
 function get_node_id(snapshot::RawSnapshot, node_idx::Int)
+    println("id idx", node_idx*NUM_NODE_FIELDS + 3)
     return snapshot.nodes[node_idx*NUM_NODE_FIELDS + 3]
 end
 
