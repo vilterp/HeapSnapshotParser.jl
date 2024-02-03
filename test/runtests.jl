@@ -6,8 +6,8 @@ using JSON
 
 @testset "tiny" begin
     snapshot = HeapSnapshotParser.parse_snapshot("../testdata/tiny.heapsnapshot")
-    @test length(node_indexes(snapshot.raw_snapshot)) > 0
-    @test length(edge_indexes(snapshot.raw_snapshot)) > 0
+    @test length(snapshot.nodes) > 0
+    @test length(snapshot.edges) > 0
 
     @info "getting flame graph"
 

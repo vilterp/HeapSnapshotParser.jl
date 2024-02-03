@@ -1,4 +1,4 @@
-const NodeIdx = Int
+# ==== 'raw' version ====
 
 struct RawSnapshotMeta
     node_fields::Vector{String}
@@ -19,9 +19,36 @@ struct RawSnapshot
     strings::Vector{String}
 end
 
-struct IndexedSnapshot
-    raw_snapshot::RawSnapshot
-    edges_start_by_node_idx::Vector{Int}
+# ==== 'parsed' version ====
+
+const NodeIdx = Int
+
+struct RawNode
+    kind::Symbol
+    name::String
+    id::Int
+    self_size::Int
+    edge_indexes::UnitRange{Int}
+end
+
+struct RawEdge
+    kind::Symbol
+    name::String
+    to::NodeIdx
+end
+
+struct ParsedSnapshot
+    nodes::Vector{RawNode}
+    edges::Vector{RawEdge}
+    strings::Vector{String}
+end
+
+function ParsedSnapshot()
+    ParsedSnapshot(
+        Vector{RawNode}(),
+        Vector{RawEdge}(),
+        Vector{String}(),
+    )
 end
 
 # index
