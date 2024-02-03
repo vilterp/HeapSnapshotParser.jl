@@ -50,7 +50,7 @@ function assemble_snapshot(raw::RawSnapshot)
         edges_range = if num_edges == 0
             1:0 # empty range
         else
-            edge_idx:(edge_idx + num_edges - 1)
+            edge_idx:(edge_idx + num_edges)
         end
 
         node = RawNode(
@@ -68,8 +68,22 @@ function assemble_snapshot(raw::RawSnapshot)
     @info "assembling edges"
     
     edges = raw.edges
-    for from_node in snapshot.nodes
+    for (node_idx, from_node) in enumerate(snapshot.nodes)
+        # @info "edges" from_node.edge_indexes
         for edge_idx in from_node.edge_indexes
+            kind_key_idx = edge_idx*NUM_EDGE_FIELDS + 1
+            if kind_key_idx > length(edges)
+                @info(
+                    "edge_idx out of range",
+                    from_node.edge_indexes,
+                    kind_key_idx,
+                    node_idx,
+                    length(snapshot.nodes),
+                    length(snapshot.edges),
+                )
+                break
+            end
+            
             kind_key = edges[edge_idx*NUM_EDGE_FIELDS + 1]
             name_key = edges[edge_idx*NUM_EDGE_FIELDS + 2]
             to_key = edges[edge_idx*NUM_EDGE_FIELDS + 3]
