@@ -108,10 +108,12 @@ function parse_token(stream::JSONStream, c::Char)
     end
 end
 
+const WHITESPACE = [' ', '\n', '\t', '\r']
+
 function munch_whitespace(input::IO)
     while true
         c = peek(input, Char)
-        if c in [' ', '\n', '\t', '\r']
+        if c in WHITESPACE
             read(input, Char)
         else
             return
@@ -136,15 +138,15 @@ function parse_string(input::IO)
         elseif c == '\\'
             c = read(input, Char)
             if c == 'n'
-                push(chars, '\n')
+                push!(chars, '\n')
             elseif c == 't'
-                push(chars, '\t')
+                push!(chars, '\t')
             elseif c == 'r'
-                push(chars, '\r')
+                push!(chars, '\r')
             elseif c == 'u'
                 error("TODO: parse unicode")
             else
-                push(chars, c)
+                push!(chars, c)
             end
         else
             push!(chars, c)
@@ -152,11 +154,11 @@ function parse_string(input::IO)
     end
 end
 
-function parse_int(input::IO)
+function parse_int(input::IO)::Int
     val = 0
     while true
         c = read(input, Char)
-        if c in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.']
+        if isdigit(c)
             val *= 10
             val += parse(Int, c)
         else
