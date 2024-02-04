@@ -76,12 +76,10 @@ function parse_int(input::Stream)::Int
     end
 end
 
-const WHITESPACE = [' ', '\n', '\t', '\r']
-
 function munch_whitespace(input::Stream)
     while true
         c = peek(input, Char)
-        if c in WHITESPACE
+        if isspace(c)
             read(input, Char)
         else
             return
