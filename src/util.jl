@@ -62,16 +62,26 @@ function parse_string(input::Stream)
     end
 end
 
+# return the digit, or nothing if it's not a digit
+function get_digit(char::Char)::Union{UInt8,Nothing}
+    if '0' <= char <= '9'
+        return UInt8(char) - UInt8('0')
+    else
+        return nothing
+    end
+end
+
 function parse_int(input::Stream)::Int
     val = 0
     while true
         c = peek(input, Char)
-        if isdigit(c)
+        digit = get_digit(c)
+        if digit === nothing
+            return val
+        else
             read(input, Char)
             val *= 10
-            val += parse(Int, c)
-        else
-            return val
+            val += digit
         end
     end
 end
