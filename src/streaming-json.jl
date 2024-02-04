@@ -40,7 +40,7 @@ end
 struct JSONColon <: JSONToken
 end
 
-# ==== read ====
+# ==== iterator ====
 
 function Base.iterate(stream::JSONStream, state=nothing)
     if eof(stream.input)
@@ -52,6 +52,14 @@ function Base.iterate(stream::JSONStream, state=nothing)
     ret = (token, nothing)
     return ret
 end
+
+Base.IteratorSize(::Type{JSONStream}) = Base.SizeUnknown()
+
+Base.IteratorEltype(::Type{JSONStream}) = Base.HasEltype()
+
+Base.eltype(::Type{JSONStream}) = JSONToken
+
+# ==== parse ====
 
 function parse_token(stream::JSONStream, c::Char)
     if c == 't'
