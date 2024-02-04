@@ -43,12 +43,16 @@ end
 # ==== read ====
 
 function Base.iterate(stream::JSONStream, state=nothing)
+    @info "input: iterate" state
     if eof(stream.input)
         return nothing
     end
+    munch_whitespace(stream.input)
     c = peek(stream.input, Char)
     token = parse_token(stream, c)
-    return (token, nothing)
+    ret = (token, nothing)
+    @info "output: iterate" ret
+    return ret
 end
 
 function parse_token(stream::JSONStream, c::Char)
@@ -92,12 +96,20 @@ function parse_token(stream::JSONStream, c::Char)
     elseif c == ':'
         read(stream.input, Char)
         return JSONColon()
-    elseif c in [' ', '\n', '\t', '\r']
-        read(stream.input, Char)
-        return iterate(stream)
     else
         val = parse_int(stream.input)
         return JSONNumber(val)
+    end
+end
+
+function munch_whitespace(input::IO)
+    while true
+        c = peek(input, Char)
+        if c in [' ', '\n', '\t', '\r']
+            read(input, Char)
+        else
+            return
+        end
     end
 end
 
