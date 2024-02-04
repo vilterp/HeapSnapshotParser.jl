@@ -1,5 +1,7 @@
+# === json ===
+
 struct PullJson
-    input::IO
+    input::Stream
 end
 
 # === skip ===

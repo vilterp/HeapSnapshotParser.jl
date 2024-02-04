@@ -1,11 +1,38 @@
-function expect_read(input::IO, expected::Char)
+mutable struct Stream
+    data::Vector{UInt8}
+    pos::Int
+    
+    function Stream(data::Vector{UInt8})
+        return new(data, 1)
+    end
+end
+
+function Base.show(io::IO, s::Stream)
+    print(io, "Stream($(length(s.data)) chars, pos $(s.pos))")
+end
+
+function peek(stream::Stream, T)
+    return Char(stream.data[stream.pos])
+end
+
+function read(stream::Stream, T)
+    c = stream.data[stream.pos]
+    stream.pos += 1
+    return Char(c)
+end
+
+# === expect ===
+
+function expect_read(input::Stream, expected::Char)
     got = read(input, Char)
     if got != expected
         error("expected $expected; got $got")
     end
 end
 
-function parse_string(input::IO)
+# === parse ===
+
+function parse_string(input::Stream)
     expect_read(input, '"')
     chars = Char[]
     while true
@@ -35,7 +62,7 @@ function parse_string(input::IO)
     end
 end
 
-function parse_int(input::IO)::Int
+function parse_int(input::Stream)::Int
     val = 0
     while true
         c = peek(input, Char)
@@ -51,7 +78,7 @@ end
 
 const WHITESPACE = [' ', '\n', '\t', '\r']
 
-function munch_whitespace(input::IO)
+function munch_whitespace(input::Stream)
     while true
         c = peek(input, Char)
         if c in WHITESPACE

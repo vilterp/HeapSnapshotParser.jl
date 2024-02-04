@@ -1,5 +1,5 @@
-function pull_snapshot(io::IO)
-    input = HeapSnapshotParser.PullJson(io)
+function pull_snapshot(stream::Stream)
+    input = HeapSnapshotParser.PullJson(stream)
     snapshot = ParsedSnapshot()
     
     get_object_start(input)
