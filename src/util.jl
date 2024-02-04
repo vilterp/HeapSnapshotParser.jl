@@ -21,7 +21,11 @@ function parse_string(input::IO)
             elseif c == 'r'
                 push!(chars, '\r')
             elseif c == 'u'
-                error("TODO: parse unicode")
+                hex = Char[]
+                for i = 1:4
+                    push!(hex, read(input, Char))
+                end
+                push!(chars, Char(parse(Int, String(hex), base=16)))
             else
                 push!(chars, c)
             end
