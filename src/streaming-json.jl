@@ -109,11 +109,12 @@ function expect_read(input::IO, expected::Char)
 end
 
 function parse_string(input::IO)
+    expect_read(input, '"')
     chars = Char[]
     while true
         c = read(input, Char)
         if c == '"'
-            return string(chars)
+            return String(chars)
         elseif c == '\\'
             c = read(input, Char)
             if c == 'n'
@@ -128,7 +129,7 @@ function parse_string(input::IO)
                 push(chars, c)
             end
         else
-            str *= c
+            push!(chars, c)
         end
     end
 end
