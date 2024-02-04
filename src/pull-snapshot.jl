@@ -11,15 +11,11 @@ function pull_snapshot(stream::Stream)
     get_comma(input)
     
     # nodes
+    @info "nodes"
     expect_string(input, "nodes")
     get_colon(input)
     get_array_start(input)
-    i = 0
     while true
-        if i % 100_000 == 0
-            println("node $i")
-        end
-        
         node = pull_node(input)
         push!(snapshot.nodes, node)
 
@@ -31,23 +27,17 @@ function pull_snapshot(stream::Stream)
         if char == ','
             get_comma(input)
         end
-        
-        i += 1
     end
     get_array_end(input)
 
     get_comma(input)
     
     # edges
+    @info "edges"
     expect_string(input, "edges")
     get_colon(input)
     get_array_start(input)
-    i = 0
     while true
-        if i % 100_000 == 0
-            println("edge $i")
-        end
-        
         edge = pull_edge(input)
         push!(snapshot.edges, edge)
 
@@ -59,7 +49,6 @@ function pull_snapshot(stream::Stream)
         if char == ','
             get_comma(input)
         end
-        i += 1
     end
     get_array_end(input)
     get_comma(input)
