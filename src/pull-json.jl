@@ -90,8 +90,10 @@ function get_string(input::PullJson)::String
     parse_string(input.input)
 end
 
-function get_int(input::PullJson)::Int
-    munch_whitespace(input.input)
+function get_int(input::PullJson; whitespace=true)::Int
+    if whitespace
+        munch_whitespace(input.input)
+    end
     i = parse_int(input.input)
     return i
 end
@@ -120,8 +122,10 @@ function get_object_end(input::PullJson)
     return nothing
 end
 
-function get_comma(input::PullJson)
-    munch_whitespace(input.input)
+function get_comma(input::PullJson, whitespace=true)
+    if whitespace
+        munch_whitespace(input.input)
+    end
     expect_read(input.input, ',')
     return nothing
 end

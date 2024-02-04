@@ -78,10 +78,10 @@ function pull_snapshot(stream::Stream)
 end
 
 function pull_edge(input::PullJson)
-    kind = get_int(input)
+    kind = get_int(input, whitespace=false)
     get_comma(input)
     
-    name = get_int(input)
+    name = get_int(input, whitespace=false)
     get_comma(input)
     
     to = get_int(input)
@@ -90,25 +90,25 @@ function pull_edge(input::PullJson)
 end
 
 function pull_node(input::PullJson)
-    kind = get_int(input)
+    kind = get_int(input, whitespace=false)
     get_comma(input)
     
-    name = get_int(input)
+    name = get_int(input, whitespace=false)
     get_comma(input)
     
-    id = get_int(input)
+    id = get_int(input, whitespace=false)
     get_comma(input)
     
-    self_size = get_int(input)
+    self_size = get_int(input, whitespace=false)
     get_comma(input)
     
-    num_edges = get_int(input)
+    num_edges = get_int(input, whitespace=false)
     get_comma(input)
     
-    trace_node_id = get_int(input)
+    trace_node_id = get_int(input, whitespace=false)
     get_comma(input)
     
-    detatchedness = get_int(input)
+    detatchedness = get_int(input, whitespace=false)
     
     return RawNode(kind, name, id, self_size, num_edges)
 end
