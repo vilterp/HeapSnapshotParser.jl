@@ -16,7 +16,6 @@ using JSON
             break
         end
         next, st = ret
-        println(next)
         push!(tokens, next)
     end
     @test length(tokens) > 0

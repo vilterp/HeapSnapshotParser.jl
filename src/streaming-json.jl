@@ -43,7 +43,6 @@ end
 # ==== read ====
 
 function Base.iterate(stream::JSONStream, state=nothing)
-    @info "input: iterate" state
     if eof(stream.input)
         return nothing
     end
@@ -51,7 +50,6 @@ function Base.iterate(stream::JSONStream, state=nothing)
     c = peek(stream.input, Char)
     token = parse_token(stream, c)
     ret = (token, nothing)
-    @info "output: iterate" ret
     return ret
 end
 
