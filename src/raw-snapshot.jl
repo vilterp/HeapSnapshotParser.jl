@@ -32,8 +32,8 @@ struct RawNode
 end
 
 struct RawEdge
-    kind::Symbol
-    name::String
+    kind::Int
+    name::Int
     to::NodeIdx
 end
 
@@ -49,27 +49,6 @@ function ParsedSnapshot()
         Vector{RawEdge}(),
         Vector{String}(),
     )
-end
-
-# index
-
-function build_indexes(raw_snapshot::RawSnapshot)
-    edges_start_by_node_idx = Vector{Int}()
-    
-    num_nodes = div(length(raw_snapshot.nodes), NUM_NODE_FIELDS)
-    
-    node_idx = 0
-    edge_start = 0
-    
-    while node_idx < num_nodes
-        num_edges = get_node_num_edges(raw_snapshot, node_idx)
-        push!(edges_start_by_node_idx, edge_start)
-        
-        edge_start += num_edges * NUM_EDGE_FIELDS
-        node_idx += 1
-    end
-    
-    return IndexedSnapshot(raw_snapshot, edges_start_by_node_idx)
 end
 
 # iterators

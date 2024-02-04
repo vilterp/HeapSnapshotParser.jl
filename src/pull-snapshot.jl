@@ -16,7 +16,6 @@ function pull_snapshot(io::IO)
     get_array_start(input)
     while true
         node = pull_node(input)
-        @info "node" node
         push!(snapshot.nodes, node)
 
         munch_whitespace(input.input)        
@@ -35,7 +34,23 @@ function pull_snapshot(io::IO)
     # edges
     expect_string(input, "edges")
     get_colon(input)
-    skip_array(input)
+    get_array_start(input)
+    while true
+        edge = pull_edge(input)
+        @info "edge" edge
+        push!(snapshot.edges, edge)
+
+        munch_whitespace(input.input)        
+        char = peek(input.input, Char)
+        @info "delim" char
+        if char == ']'
+            break
+        end
+        if char == ','
+            get_comma(input)
+        end
+    end
+    get_array_end(input)
     get_comma(input)
     
     # strings
@@ -46,6 +61,18 @@ function pull_snapshot(io::IO)
     get_object_end(input)
     
     return snapshot
+end
+
+function pull_edge(input::PullJson)
+    kind = get_int(input)
+    get_comma(input)
+    
+    name = get_int(input)
+    get_comma(input)
+    
+    to = get_int(input)
+    
+    return RawEdge(kind, name, to)
 end
 
 function pull_node(input::PullJson)
