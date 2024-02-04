@@ -72,7 +72,8 @@ function parse_token(stream::JSONStream, c::Char)
         read(stream.input) == 'l' || error("expected 'l'")
         return JSONNull()
     elseif c == '"'
-        return JSONString(Parsers.parse(String, stream.input))
+        str = parse_string(stream.input)
+        return JSONString(str)
     elseif c == '['
         read(stream.input, Char)
         return JSONArrayStart()
@@ -95,7 +96,45 @@ function parse_token(stream::JSONStream, c::Char)
         read(stream.input, Char)
         return iterate(stream)
     else
-        # int for now; probabl should be Float64
-        return JSONNumber(Parsers.parse(Int, stream.input))
+        val = parse_int(stream.input)
+        return JSONNumber(val)
+    end
+end
+
+function parse_string(input::IO)
+    chars = Char[]
+    while true
+        c = read(input, Char)
+        if c == '"'
+            return string(chars)
+        elseif c == '\\'
+            c = read(input, Char)
+            if c == 'n'
+                push(chars, '\n')
+            elseif c == 't'
+                push(chars, '\t')
+            elseif c == 'r'
+                push(chars, '\r')
+            elseif c == 'u'
+                error("TODO: parse unicode")
+            else
+                push(chars, c)
+            end
+        else
+            str *= c
+        end
+    end
+end
+
+function parse_int(input::IO)
+    val = 0
+    while true
+        c = read(input, Char)
+        if c in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.']
+            val *= 10
+            val += parse(Int, c)
+        else
+            return val
+        end
     end
 end
