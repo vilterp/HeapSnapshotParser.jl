@@ -28,7 +28,7 @@ struct RawNode
     name::Int
     id::Int
     self_size::Int
-    num_edges::Int
+    edge_indexes::UnitRange{Int}
 end
 
 struct RawEdge

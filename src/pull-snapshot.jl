@@ -15,9 +15,12 @@ function pull_snapshot(stream::Stream)
     expect_string(input, "nodes")
     get_colon(input)
     get_array_start(input)
+    edge_index = 1
     while true
-        node = pull_node(input)
+        node, num_edges = pull_node(input, edge_index)
         push!(snapshot.nodes, node)
+        
+        edge_index += num_edges
 
         munch_whitespace(input.input)        
         char = peek(input.input, Char)
@@ -89,7 +92,7 @@ function pull_edge(input::PullJson)
     return RawEdge(kind, name, to)
 end
 
-function pull_node(input::PullJson)
+function pull_node(input::PullJson, edge_index::Int)
     kind = get_int(input, whitespace=false)
     get_comma(input, whitespace=false)
     
@@ -110,5 +113,13 @@ function pull_node(input::PullJson)
     
     detatchedness = get_int(input, whitespace=false)
     
-    return RawNode(kind, name, id, self_size, num_edges)
+    range = if num_edges == 0
+        1:0
+    else
+        edge_index:(edge_index + num_edges)
+    end
+    
+    node = RawNode(kind, name, id, self_size, range)
+    
+    return node, num_edges
 end
