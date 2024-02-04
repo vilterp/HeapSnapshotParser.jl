@@ -119,5 +119,6 @@ include("flame-graph.jl")
 include("util.jl")
 include("pull-json.jl")
 include("streaming-json.jl")
+include("pull-snapshot.jl")
 
 end # module

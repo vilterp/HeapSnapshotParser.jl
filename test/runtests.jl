@@ -4,7 +4,7 @@ using HeapSnapshotParser: node_indexes, edge_indexes
 using Test
 using JSON
 
-@testset "pull parse" begin
+@testset "JSON: pull parse" begin
     input = HeapSnapshotParser.PullJson(IOBuffer("""{"a": 1, "b": [1, 2, 3]}"""))
     @test HeapSnapshotParser.get_object_start(input) === nothing
     @test HeapSnapshotParser.get_string(input) == "a"
@@ -23,20 +23,19 @@ using JSON
     @test HeapSnapshotParser.get_object_end(input) === nothing
 end
 
-@testset "streaming parse" begin
+@testset "pull snapshot" begin
+    path = "../testdata/tiny.heapsnapshot"
+    file = open(path, "r")
+    snapshot = HeapSnapshotParser.pull_snapshot(file)
+    @test length(snapshot.nodes) > 0
+    @test length(snapshot.edges) > 0
+end
+
+@testset "JSON: streaming parse" begin
     path = "../testdata/tiny.heapsnapshot"
     file = open(path, "r")
     stream = HeapSnapshotParser.JSONStream(file)
-    # TODO: get Base.iterate to work
-    tokens = []
-    while true
-        ret = iterate(stream)
-        if ret === nothing
-            break
-        end
-        next, st = ret
-        push!(tokens, next)
-    end
+    tokens = collect(stream)
     @test length(tokens) > 0
     @test tokens[1] == HeapSnapshotParser.JSONObjectStart()
     @test tokens[end] == HeapSnapshotParser.JSONObjectEnd()
