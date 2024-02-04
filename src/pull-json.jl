@@ -122,7 +122,7 @@ function get_object_end(input::PullJson)
     return nothing
 end
 
-function get_comma(input::PullJson, whitespace=true)
+function get_comma(input::PullJson; whitespace=true)
     if whitespace
         munch_whitespace(input.input)
     end

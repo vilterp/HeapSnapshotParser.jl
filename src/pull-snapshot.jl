@@ -79,10 +79,10 @@ end
 
 function pull_edge(input::PullJson)
     kind = get_int(input, whitespace=false)
-    get_comma(input)
+    get_comma(input, whitespace=false)
     
     name = get_int(input, whitespace=false)
-    get_comma(input)
+    get_comma(input, whitespace=false)
     
     to = get_int(input)
     
@@ -91,22 +91,22 @@ end
 
 function pull_node(input::PullJson)
     kind = get_int(input, whitespace=false)
-    get_comma(input)
+    get_comma(input, whitespace=false)
     
     name = get_int(input, whitespace=false)
-    get_comma(input)
+    get_comma(input, whitespace=false)
     
     id = get_int(input, whitespace=false)
-    get_comma(input)
+    get_comma(input, whitespace=false)
     
     self_size = get_int(input, whitespace=false)
-    get_comma(input)
+    get_comma(input, whitespace=false)
     
     num_edges = get_int(input, whitespace=false)
-    get_comma(input)
+    get_comma(input, whitespace=false)
     
     trace_node_id = get_int(input, whitespace=false)
-    get_comma(input)
+    get_comma(input, whitespace=false)
     
     detatchedness = get_int(input, whitespace=false)
     
