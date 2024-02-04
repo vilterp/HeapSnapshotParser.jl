@@ -2,6 +2,8 @@ struct PullJson
     input::IO
 end
 
+# === skip ===
+
 function skip_value(input::PullJson)
     munch_whitespace(input.input)
     c = peek(input.input, Char)
@@ -50,6 +52,8 @@ function skip_array(input::PullJson)
         end
     end
 end
+
+# === get ===
 
 function get_bool(input::PullJson)::Bool
     munch_whitespace(input.input)
@@ -123,4 +127,13 @@ function get_colon(input::PullJson)
     munch_whitespace(input.input)
     expect_read(input.input, ':')
     return nothing
+end
+
+# === expect ===
+
+function expect_string(input::PullJson, expected::String)
+    got = get_string(input)
+    if got != expected
+        error("expected $expected; got $got")
+    end
 end
