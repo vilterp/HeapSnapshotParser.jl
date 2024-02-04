@@ -87,16 +87,16 @@ function pull_edge(input::PullJson)
     name = get_int(input, whitespace=false)
     get_comma(input, whitespace=false)
     
-    to = get_int(input)
+    to = get_int(input) / NUM_NODE_FIELDS
     
     return RawEdge(kind, name, to)
 end
 
 function pull_node(input::PullJson, edge_index::Int)
-    kind = get_int(input, whitespace=false)
+    kind = get_int(input, whitespace=false) + 1
     get_comma(input, whitespace=false)
     
-    name = get_int(input, whitespace=false)
+    name = get_int(input, whitespace=false) + 1
     get_comma(input, whitespace=false)
     
     id = get_int(input, whitespace=false)

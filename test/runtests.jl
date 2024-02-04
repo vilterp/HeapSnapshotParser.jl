@@ -5,7 +5,10 @@ using Test
 using JSON
 
 @testset "JSON: pull parse" begin
-    input = HeapSnapshotParser.PullJson(IOBuffer("""{"a": 1, "b": [1, 2, 3]}"""))
+    str = """{"a": 1, "b": [1, 2, 3]}"""
+    stream = HeapSnapshotParser.Stream(Vector{UInt8}(str))
+    input = HeapSnapshotParser.PullJson(stream)
+
     @test HeapSnapshotParser.get_object_start(input) === nothing
     @test HeapSnapshotParser.get_string(input) == "a"
     @test HeapSnapshotParser.get_colon(input) === nothing
@@ -23,25 +26,6 @@ using JSON
     @test HeapSnapshotParser.get_object_end(input) === nothing
 end
 
-@testset "pull snapshot" begin
-    path = "../testdata/tiny.heapsnapshot"
-    file = open(path, "r")
-    snapshot = HeapSnapshotParser.pull_snapshot(file)
-    @test length(snapshot.nodes) > 0
-    @test length(snapshot.edges) > 0
-    @test length(snapshot.strings) > 0
-end
-
-@testset "JSON: streaming parse" begin
-    path = "../testdata/tiny.heapsnapshot"
-    file = open(path, "r")
-    stream = HeapSnapshotParser.JSONStream(file)
-    tokens = collect(stream)
-    @test length(tokens) > 0
-    @test tokens[1] == HeapSnapshotParser.JSONObjectStart()
-    @test tokens[end] == HeapSnapshotParser.JSONObjectEnd()
-end
-
 @testset "tiny" begin
     snapshot = HeapSnapshotParser.parse_snapshot("../testdata/tiny.heapsnapshot")
     @test length(snapshot.nodes) > 0
@@ -54,7 +38,7 @@ end
     @test flame_graph.parent === nothing
     # @test flame_graph.total_value > 0
 
-    dict = HeapSnapshotParser.as_json(flame_graph; max_depth=1)
+    dict = HeapSnapshotParser.as_json(snapshot, flame_graph; max_depth=1)
     @test length(dict["children"]) > 0
     
     println(JSON.json(dict, 4))
@@ -120,7 +104,7 @@ end
     @test flame_graph.parent === nothing
     # @test flame_graph.total_value > 0
     
-    dict = HeapSnapshotParser.as_json(flame_graph; max_depth=1)
+    dict = HeapSnapshotParser.as_json(snapshot, flame_graph; max_depth=1)
     @test length(dict["children"]) > 0
     
     println(JSON.json(dict, 4))

@@ -60,7 +60,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         push!(seen, edge.to)
         child = flame_nodes[edge.to]
         child.parent = node
-        child.attr_name = edge.name
+        child.attr_name = snapshot.strings[edge.name]
         push!(node.children, child)
         
         push!(stack, child)
@@ -68,7 +68,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     
     @info "computing sizes"
     
-    compute_sizes!(root_flame_node)
+    # compute_sizes!(root_flame_node)
     
     return root_flame_node
 end
@@ -96,19 +96,20 @@ function compute_sizes!(root::FlameNode)
     end
 end
 
-function as_json(node::FlameNode; cur_depth=0, max_depth=10000)
+function as_json(snapshot::ParsedSnapshot, node::FlameNode; cur_depth=0, max_depth=10000)
     children = get_relevant_children(node; cur_depth=cur_depth, max_depth=max_depth)
+    node_name = snapshot.strings[node.node.name]
     return Dict(
         "name" => if node.attr_name === nothing
-            node.node.name
+            node_name
         else
-            "$(node.attr_name): $(node.node.name)"
+            "$(node.attr_name): $(node_name)"
         end,
         "self_value" => node.self_value,
         "total_value" => node.total_value,
         "num_children" => length(node.children),
         "children" => [
-            as_json(child; cur_depth=cur_depth+1, max_depth=max_depth)
+            as_json(snapshot, child; cur_depth=cur_depth+1, max_depth=max_depth)
             for child in children
         ]
     )
