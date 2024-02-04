@@ -29,6 +29,7 @@ end
     snapshot = HeapSnapshotParser.pull_snapshot(file)
     @test length(snapshot.nodes) > 0
     @test length(snapshot.edges) > 0
+    @test length(snapshot.strings) > 0
 end
 
 @testset "JSON: streaming parse" begin

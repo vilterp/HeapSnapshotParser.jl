@@ -37,12 +37,10 @@ function pull_snapshot(io::IO)
     get_array_start(input)
     while true
         edge = pull_edge(input)
-        @info "edge" edge
         push!(snapshot.edges, edge)
 
         munch_whitespace(input.input)        
         char = peek(input.input, Char)
-        @info "delim" char
         if char == ']'
             break
         end
@@ -56,7 +54,21 @@ function pull_snapshot(io::IO)
     # strings
     expect_string(input, "strings")
     get_colon(input)
-    skip_array(input)
+    get_array_start(input)
+    while true
+        str = get_string(input)
+        push!(snapshot.strings, str)
+
+        munch_whitespace(input.input)        
+        char = peek(input.input, Char)
+        if char == ']'
+            break
+        end
+        if char == ','
+            get_comma(input)
+        end
+    end
+    get_array_end(input)
     
     get_object_end(input)
     
