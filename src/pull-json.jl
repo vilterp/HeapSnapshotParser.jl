@@ -90,7 +90,8 @@ end
 
 function get_int(input::PullJson)::Int
     munch_whitespace(input.input)
-    return parse_int(input.input)
+    i = parse_int(input.input)
+    return i
 end
 
 function get_array_start(input::PullJson)

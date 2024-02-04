@@ -24,11 +24,11 @@ end
 const NodeIdx = Int
 
 struct RawNode
-    kind::Symbol
-    name::String
+    kind::Int
+    name::Int
     id::Int
     self_size::Int
-    edge_indexes::UnitRange{Int}
+    num_edges::Int
 end
 
 struct RawEdge
