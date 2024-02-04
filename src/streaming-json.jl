@@ -54,22 +54,22 @@ end
 function parse_token(stream::JSONStream, c::Char)
     if c == 't'
         read(stream.input, Char)
-        read(stream.input) == 'r' || error("expected 'r'")
-        read(stream.input) == 'u' || error("expected 'u'")
-        read(stream.input) == 'e' || error("expected 'e'")
+        expect_read(stream.input, 'r')
+        expect_read(stream.input, 'u')
+        expect_read(stream.input, 'e')
         return JSONBool(true)
     elseif c == 'f'
         read(stream.input, Char)
-        read(stream.input) == 'a' || error("expected 'a'")
-        read(stream.input) == 'l' || error("expected 'l'")
-        read(stream.input) == 's' || error("expected 's'")
-        read(stream.input) == 'e' || error("expected 'e'")
+        expect_read(stream.input, 'a')
+        expect_read(stream.input, 'l')
+        expect_read(stream.input, 's')
+        expect_read(stream.input, 'e')
         return JSONBool(false)
     elseif c == 'n'
         read(stream.input, Char)
-        read(stream.input) == 'u' || error("expected 'u'")
-        read(stream.input) == 'l' || error("expected 'l'")
-        read(stream.input) == 'l' || error("expected 'l'")
+        expect_read(stream.input, 'u')
+        expect_read(stream.input, 'l')
+        expect_read(stream.input, 'l')
         return JSONNull()
     elseif c == '"'
         str = parse_string(stream.input)
@@ -98,6 +98,13 @@ function parse_token(stream::JSONStream, c::Char)
     else
         val = parse_int(stream.input)
         return JSONNumber(val)
+    end
+end
+
+function expect_read(input::IO, expected::Char)
+    got = read(input, Char)
+    if got != expected
+        error("expected $expected; got $got")
     end
 end
 
