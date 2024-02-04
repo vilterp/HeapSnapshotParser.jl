@@ -116,5 +116,6 @@ function assemble_snapshot(raw::RawSnapshot)
 end
 
 include("flame-graph.jl")
+include("streaming-json.jl")
 
 end # module
