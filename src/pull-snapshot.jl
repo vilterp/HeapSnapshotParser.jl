@@ -57,6 +57,7 @@ function pull_snapshot(stream::Stream)
     get_comma(input)
     
     # strings
+    @info "strings"
     expect_string(input, "strings")
     get_colon(input)
     get_array_start(input)

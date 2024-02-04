@@ -33,31 +33,20 @@ end
 # === parse ===
 
 function parse_string(input::Stream)
+    start, finish = get_string_extent(input)
+    
+    return String(input.data[start+1:finish-1])
+end
+
+function get_string_extent(input::Stream)
+    start = input.pos
     expect_read(input, '"')
-    chars = Char[]
     while true
         c = read(input, Char)
         if c == '"'
-            return String(chars)
+            return (start, input.pos-1)
         elseif c == '\\'
-            c = read(input, Char)
-            if c == 'n'
-                push!(chars, '\n')
-            elseif c == 't'
-                push!(chars, '\t')
-            elseif c == 'r'
-                push!(chars, '\r')
-            elseif c == 'u'
-                hex = Char[]
-                for i = 1:4
-                    push!(hex, read(input, Char))
-                end
-                push!(chars, Char(parse(Int, String(hex), base=16)))
-            else
-                push!(chars, c)
-            end
-        else
-            push!(chars, c)
+            read(input, Char)
         end
     end
 end
