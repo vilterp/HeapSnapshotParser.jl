@@ -11,11 +11,11 @@ function Base.show(io::IO, s::Stream)
     print(io, "Stream($(length(s.data)) chars, pos $(s.pos))")
 end
 
-function peek(stream::Stream, T)
+@inline function peek(stream::Stream, T)
     return Char(stream.data[stream.pos])
 end
 
-function read(stream::Stream, T)
+@inline function read(stream::Stream, T)
     c = stream.data[stream.pos]
     stream.pos += 1
     return Char(c)
