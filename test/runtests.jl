@@ -4,6 +4,25 @@ using HeapSnapshotParser: node_indexes, edge_indexes
 using Test
 using JSON
 
+@testset "parse" begin
+    path = "../testdata/tiny.heapsnapshot"
+    file = open(path, "r")
+    stream = HeapSnapshotParser.JSONStream(file)
+    # TODO: get Base.iterate to work
+    tokens = []
+    while true
+        ret = iterate(stream)
+        if ret === nothing
+            break
+        end
+        next, st = ret
+        push!(tokens, next)
+    end
+    @test length(tokens) > 0
+    @test tokens[1] == HeapSnapshotParser.JSONObjectStart()
+    @test tokens[end] == HeapSnapshotParser.JSONObjectEnd()
+end
+
 @testset "tiny" begin
     snapshot = HeapSnapshotParser.parse_snapshot("../testdata/tiny.heapsnapshot")
     @test length(snapshot.nodes) > 0
