@@ -82,10 +82,10 @@ function pull_snapshot(stream::Stream)
 end
 
 function pull_edge(input::PullJson)
-    kind = get_int(input, whitespace=false)
+    kind = get_int(input, whitespace=false) + 1
     get_comma(input, whitespace=false)
     
-    name = get_int(input, whitespace=false)
+    name = get_int(input, whitespace=false) + 1
     get_comma(input, whitespace=false)
     
     to = div(get_int(input), NUM_NODE_FIELDS)

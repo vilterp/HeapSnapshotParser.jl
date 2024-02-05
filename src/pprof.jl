@@ -6,6 +6,8 @@ import pprof_jll
 import PProf.perftools.profiles: Profile, ValueType, Sample, Function,
     Location, Line, Label
 
+const PProfile = Profile
+
 """
     _enter!(dict::OrderedDict{T, Int64}, key::T) where T
 
@@ -17,6 +19,81 @@ proto file specifies 64-bit integers.
 """
 function _enter!(dict::OrderedDict{T, Int64}, key::T) where T
     return get!(dict, key, Int64(length(dict)))
+end
+
+function pprof_encode(root::FlameNode)
+    string_table = OrderedDict{AbstractString, Int64}()
+    enter!(string) = _enter!(string_table, string)
+    enter!(::Nothing) = _enter!(string_table, "nothing")
+    ValueType!(_type, unit) = ValueType(enter!(_type), enter!(unit))
+    Label!(key, value, unit) = Label(key = enter!(key), num = value, num_unit = enter!(unit))
+    Label!(key, value) = Label(key = enter!(key), str = enter!(string(value)))
+
+    # Setup:
+    enter!("")  # NOTE: pprof requires first entry to be ""
+    # Functions need a uid, we'll use the pointer for the method instance
+    seen_funcs = Set{UInt64}()
+    funcs = Dict{UInt64, Function}()
+
+    seen_locs = Set{UInt64}()
+    locs  = Dict{UInt64, Location}()
+    locs_from_c  = Dict{UInt64, Bool}()
+    samples = Vector{Sample}()
+
+    sample_type = [
+        ValueType!("events",      "count"), # Mandatory
+    ]
+
+    period_type = ValueType!("cpu", "nanoseconds")
+    # start decoding backtraces
+    location_id = Vector{FlameNode}()
+
+    # All samples get the same value for CPU profiles.
+    value = [
+        1,      # events
+    ]
+
+    lastwaszero = true  # (Legacy: used when has_meta = false)
+
+    # visit every node in the flame graph
+    stack = Stack()
+    push!(stack, root)
+    i = 0
+    while !isempty(stack)
+        if i % 100000 == 0
+            @info "iteration $i"
+        end
+        
+        (node, child_index) = top(stack)
+        
+        @info "children" length(node.children)
+        
+        if child_index > length(node.children)
+            pop!(stack)
+            continue
+        end
+        
+        child = node.children[child_index]
+        increment!(stack)
+        
+        push!(stack, child)
+        
+        i += 1
+    end
+
+    # If from_c=false funcs and locs should NOT contain C functions
+    prof = PProfile(
+        sample_type = sample_type,
+        sample = samples,
+        location =  collect(values(locs)),
+        var"#function" = collect(values(funcs)),
+        string_table = collect(keys(string_table)),
+        period_type = period_type,
+        period = sampling_delay,
+        default_sample_type = 1, # events
+    )
+    
+    return prof
 end
 
 """
@@ -48,65 +125,14 @@ You can also use `PProf.refresh(file="...")` to open a new file in the server.
 - `ui_relative_percentages`: Passes `-relative_percentages` to pprof. Causes nodes
   ignored/hidden through the web UI to be ignored from totals when computing percentages.
 """
-function pprof(flame_graph::FlameNode,
-               web::Bool = true,
-               webhost::AbstractString = "localhost",
-               webport::Integer = 60000,
-               out::AbstractString = "profile.pb.gz",
-               ui_relative_percentages::Bool = true,
-            )
-
-    string_table = OrderedDict{AbstractString, Int64}()
-    enter!(string) = _enter!(string_table, string)
-    enter!(::Nothing) = _enter!(string_table, "nothing")
-    ValueType!(_type, unit) = ValueType(enter!(_type), enter!(unit))
-    Label!(key, value, unit) = Label(key = enter!(key), num = value, num_unit = enter!(unit))
-    Label!(key, value) = Label(key = enter!(key), str = enter!(string(value)))
-
-    # Setup:
-    enter!("")  # NOTE: pprof requires first entry to be ""
-    # Functions need a uid, we'll use the pointer for the method instance
-    seen_funcs = Set{UInt64}()
-    funcs = Dict{UInt64, Function}()
-
-    seen_locs = Set{UInt64}()
-    locs  = Dict{UInt64, Location}()
-    locs_from_c  = Dict{UInt64, Bool}()
-    samples = Vector{Sample}()
-
-    sample_type = [
-        ValueType!("events",      "count"), # Mandatory
-    ]
-
-    period_type = ValueType!("cpu", "nanoseconds")
-    drop_frames = isnothing(drop_frames) ? 0 : enter!(drop_frames)
-    keep_frames = isnothing(keep_frames) ? 0 : enter!(keep_frames)
-    # start decoding backtraces
-    location_id = Vector{eltype(data)}()
-
-    # All samples get the same value for CPU profiles.
-    value = [
-        1,      # events
-    ]
-
-    lastwaszero = true  # (Legacy: used when has_meta = false)
-
-    XXXX
-
-    # If from_c=false funcs and locs should NOT contain C functions
-    prof = PProfile(
-        sample_type = sample_type,
-        sample = samples,
-        location =  collect(values(locs)),
-        var"#function" = collect(values(funcs)),
-        string_table = collect(keys(string_table)),
-        drop_frames = drop_frames,
-        keep_frames = keep_frames,
-        period_type = period_type,
-        period = sampling_delay,
-        default_sample_type = 1, # events
-    )
-
+function pprof(
+    profile::PProfile;
+    web::Bool = true,
+    webhost::AbstractString = "localhost",
+    webport::Integer = 60000,
+    out::AbstractString = "profile.pb.gz",
+    ui_relative_percentages::Bool = true,
+)
     # Write to disk
     io = GzipCompressorStream(open(out, "w"))
     try
@@ -121,25 +147,6 @@ function pprof(flame_graph::FlameNode,
     end
 
     out
-end
-
-function _escape_name_for_pprof(name)
-    # HACK: Apparently proto doesn't escape func names with `"` in them ... >.<
-    # TODO: Remove this hack after https://github.com/google/pprof/pull/564
-    quoted = repr(string(name))
-    quoted = quoted[2:thisind(quoted, end-1)]
-    return quoted
-end
-function method_instance_id(frame)
-    # `func_id` - Uniquely identifies this function (a method instance in julia, and
-    # a function in C/C++).
-    # Note that this should be unique even for several different functions all
-    # inlined into the same frame.
-    func_id = if frame.linfo !== nothing
-        hash(frame.linfo)
-    else
-        hash((frame.func, frame.file, frame.line, frame.inlined))
-    end
 end
 
 """

@@ -66,8 +66,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         push!(stack, child)
     end
     
-    @info "computing sizes"
-    
+    # @info "computing sizes"
     # compute_sizes!(root_flame_node)
     
     return root_flame_node

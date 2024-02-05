@@ -26,6 +26,14 @@ using JSON
     @test HeapSnapshotParser.get_object_end(input) === nothing
 end
 
+@testset "pprof" begin
+    snapshot = HeapSnapshotParser.parse_snapshot("../empty-2.heapsnapshot")
+    flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
+    pprof = HeapSnapshotParser.pprof_encode(flame_graph)
+    @test length(pprof.samples) > 0
+    @test length(pprof.locations) > 0
+end
+
 @testset "tiny" begin
     snapshot = HeapSnapshotParser.parse_snapshot("../testdata/tiny.heapsnapshot")
     @test length(snapshot.nodes) > 0
