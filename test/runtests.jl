@@ -1,6 +1,5 @@
 import HeapSnapshotParser
 
-using HeapSnapshotParser: node_indexes, edge_indexes
 using Test
 using JSON
 
@@ -181,3 +180,4 @@ end
     
     @test JSON.json(dict, 4) == expected
 end
+
