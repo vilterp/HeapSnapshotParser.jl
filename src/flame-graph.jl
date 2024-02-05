@@ -165,3 +165,22 @@ end
 function nodes_vector(stack::Stack)
     return stack.nodes
 end
+
+function visit(f::Function, root::FlameNode)
+    stack = Stack()
+    push!(stack, root)
+    while !isempty(stack)
+        node, child_index = top(stack)
+        
+        if child_index > length(node.children)
+            pop!(stack)
+            continue
+        end
+        
+        f(node, stack)
+        
+        child = node.children[child_index]
+        increment!(stack)
+        push!(stack, child)
+    end
+end

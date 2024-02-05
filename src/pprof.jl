@@ -44,8 +44,6 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
     ]
 
     period_type = ValueType!("cpu", "nanoseconds")
-    # start decoding backtraces
-    location_id = Vector{FlameNode}()
 
     # All samples get the same value for CPU profiles.
     value = [
@@ -55,16 +53,17 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
     lastwaszero = true  # (Legacy: used when has_meta = false)
 
     # visit every node in the flame graph
-    stack = Stack()
-    push!(stack, root)
-    while !isempty(stack)
-        node, child_index = top(stack)
-        
-        if child_index > length(node.children)
-            pop!(stack)
-            continue
+    # TODO: abstract out this visitor
+    
+    i = 0
+    visit(root) do
+        if i % 1000 == 0
+            @info "processing node $i"
+        else
+            return
         end
         
+        # add entry
         location = Location(
             id = node.node.id,
         )
@@ -78,15 +77,11 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
             value = value,
             label = [
                 Label!("self", node.self_value, "bytes"),
-                Label!("total", node.total_value, "bytes"),
             ],
         )
         push!(samples, sample)
         
-        child = node.children[child_index]
-        increment!(stack)
-        
-        push!(stack, child)
+        i += 1
     end
 
     # If from_c=false funcs and locs should NOT contain C functions
