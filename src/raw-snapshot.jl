@@ -1,5 +1,3 @@
-# ==== 'parsed' version ====
-
 const NodeIdx = Int
 
 struct RawNode
@@ -28,38 +26,4 @@ function ParsedSnapshot()
         Vector{RawEdge}(),
         Vector{String}(),
     )
-end
-
-# iterators
-
-function node_indexes(snapshot::RawSnapshot)
-    return 1:div(length(snapshot.nodes), NUM_NODE_FIELDS)
-end
-
-function edge_indexes(snapshot::RawSnapshot)
-    return 1:div(length(snapshot.edges), NUM_EDGE_FIELDS)
-end
-
-# getters
-
-function get_node_name(snapshot::RawSnapshot, node_idx::Int)
-    string_idx = snapshot.nodes[node_idx * NUM_NODE_FIELDS + 2]
-    return snapshot.strings[string_idx]
-end
-
-function get_node_id(snapshot::RawSnapshot, node_idx::Int)
-    println("id idx", node_idx*NUM_NODE_FIELDS + 3)
-    return snapshot.nodes[node_idx*NUM_NODE_FIELDS + 3]
-end
-
-function get_node_self_size(snapshot::RawSnapshot, node_idx::Int)
-    return snapshot.nodes[node_idx*NUM_NODE_FIELDS + 4]
-end
-
-function get_node_num_edges(snapshot::RawSnapshot, node_idx::Int)
-    return snapshot.nodes[node_idx * NUM_NODE_FIELDS + 5]
-end
-
-function get_node_out_edges(snapshot::RawSnapshot, node_idx::Int)
-    return XXX
 end
