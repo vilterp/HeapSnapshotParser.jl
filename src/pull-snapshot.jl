@@ -88,7 +88,7 @@ function pull_edge(input::PullJson)
     name = get_int(input, whitespace=false) + 1
     get_comma(input, whitespace=false)
     
-    to = div(get_int(input), NUM_NODE_FIELDS)
+    to = div(get_int(input), NUM_NODE_FIELDS) + 1
     
     return RawEdge(kind, name, to)
 end
