@@ -25,7 +25,7 @@ function _enter!(dict::OrderedDict{String, Int64}, key::String)
     return get!(dict, key, Int64(length(dict)))
 end
 
-function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::Int = 100)
+function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::Int = 10_000)
     string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
@@ -48,13 +48,6 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
 
     period_type = ValueType!("heap", "bytes")
 
-    # All samples get the same value for CPU profiles.
-    value = [
-        1,      # events
-    ]
-
-    lastwaszero = true  # (Legacy: used when has_meta = false)
-    
     function enter_function(node::FlameNode)
         return get!(funcs, node.node.id) do
             id = sanitize_id(node.node.id)
@@ -98,7 +91,10 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
                 enter_location(node).id
                 for node in Iterators.reverse(nodes_vector(stack))
             ],
-            value = value,
+            value = [
+                1,               # events
+                node.self_value, # bytes
+            ],
             label = [
                 Label!("self", node.self_value, "bytes"),
             ],
@@ -114,6 +110,7 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
         var"#function" = collect(values(funcs)),
         string_table = collect(keys(string_table)),
         default_sample_type = 1, # events
+        period_type = period_type,
     )
     
     return prof
