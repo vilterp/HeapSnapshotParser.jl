@@ -56,8 +56,8 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
     # TODO: abstract out this visitor
     
     i = 0
-    visit(root) do
-        if i % 1000 == 0
+    visit(root) do node, stack
+        if i % 100 == 0
             @info "processing node $i"
         else
             return

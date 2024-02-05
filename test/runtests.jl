@@ -60,7 +60,7 @@ end
     "total_value": 2304,
     "children": [
         {
-            "name": "current task: Task",
+            "name": "root task: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
@@ -102,7 +102,7 @@ end
 end
 
 @testset "big" begin
-    snapshot = HeapSnapshotParser.parse_snapshot("../Snapshot.heapsnapshot")
+    snapshot = HeapSnapshotParser.parse_snapshot("../empty-2.heapsnapshot")
     @test length(snapshot.nodes) > 0
     @test length(snapshot.edges) > 0
     
@@ -123,26 +123,26 @@ end
     "name": "",
     "num_children": 4,
     "self_value": 0,
-    "total_value": 146190524,
+    "total_value": 146495820,
     "children": [
         {
             "name": "root task: Task",
             "num_children": 3,
             "self_value": 384,
-            "total_value": 146189345,
+            "total_value": 146494668,
             "children": [
                 {
                     "name": "stack: (stack frame)",
-                    "num_children": 2,
+                    "num_children": 3,
                     "self_value": 1,
-                    "total_value": 146188624,
+                    "total_value": 146494251,
                     "children": []
                 },
                 {
                     "name": "storage: Base.IdDict{Any, Any}",
-                    "num_children": 1,
+                    "num_children": 0,
                     "self_value": 32,
-                    "total_value": 336,
+                    "total_value": 32,
                     "children": []
                 },
                 {
@@ -156,18 +156,10 @@ end
         },
         {
             "name": "root task: Task",
-            "num_children": 1,
+            "num_children": 0,
             "self_value": 384,
-            "total_value": 411,
-            "children": [
-                {
-                    "name": "stack: (stack frame)",
-                    "num_children": 2,
-                    "self_value": 1,
-                    "total_value": 27,
-                    "children": []
-                }
-            ]
+            "total_value": 384,
+            "children": []
         },
         {
             "name": "root task: Task",
