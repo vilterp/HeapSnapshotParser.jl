@@ -7,9 +7,16 @@ Parse heap snapshots in the Chrome/V8 JSON format, documented here: https://lear
 In Julia 1.9+:
 
 ```julia
+# Take snapshot
 using Profile
-Profile.take_heap_snapshot("foo.heapsnapshot")
+path = "foo.heapsnapshot"
+Profile.take_heap_snapshot(path)
 
+# Load snapshot
 using HeapSnapshotParser
-s = HeapSnapshotParser.parse_snapshot(open("foo.heapsnapshot"))
+snapshot = HeapSnapshotParser.parse_snapshot(path)
+
+# Visualize with PProf
+flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
+HeapSnapshotParser.pprof(snapshot, flame_graph)
 ```
