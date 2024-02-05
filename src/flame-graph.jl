@@ -125,6 +125,7 @@ function get_relevant_children(node::FlameNode; cur_depth=0, max_depth=10000, to
 end
 
 # ====== stack
+# TODO: not sure if this is worth it
 
 struct Stack
     nodes::Vector{FlameNode}
@@ -159,4 +160,8 @@ function top(stack::Stack)
         stack.nodes[end],
         stack.child_indices[end],
     )
+end
+
+function nodes_vector(stack::Stack)
+    return stack.nodes
 end

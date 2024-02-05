@@ -17,12 +17,12 @@ Useful for the Strings table
 NOTE: We must use Int64 throughout this package (regardless of system word-size) b/c the
 proto file specifies 64-bit integers.
 """
-function _enter!(dict::OrderedDict{T, Int64}, key::T) where T
+function _enter!(dict::OrderedDict{String, Int64}, key::String)
     return get!(dict, key, Int64(length(dict)))
 end
 
-function pprof_encode(root::FlameNode)
-    string_table = OrderedDict{AbstractString, Int64}()
+function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
+    string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
     ValueType!(_type, unit) = ValueType(enter!(_type), enter!(unit))
@@ -36,12 +36,11 @@ function pprof_encode(root::FlameNode)
     funcs = Dict{UInt64, Function}()
 
     seen_locs = Set{UInt64}()
-    locs  = Dict{UInt64, Location}()
-    locs_from_c  = Dict{UInt64, Bool}()
+    locs = Vector{Location}()
     samples = Vector{Sample}()
 
     sample_type = [
-        ValueType!("events",      "count"), # Mandatory
+        ValueType!("events", "count"), # Mandatory
     ]
 
     period_type = ValueType!("cpu", "nanoseconds")
@@ -59,12 +58,30 @@ function pprof_encode(root::FlameNode)
     stack = Stack()
     push!(stack, root)
     while !isempty(stack)
-        (node, child_index) = top(stack)
+        node, child_index = top(stack)
         
         if child_index > length(node.children)
             pop!(stack)
             continue
         end
+        
+        location = Location(
+            id = node.node.id,
+        )
+        push!(locs, location)
+        
+        sample = Sample(
+            location_id = [
+                node.node.id
+                for node in Iterators.reverse(nodes_vector(stack))
+            ],
+            value = value,
+            label = [
+                Label!("self", node.self_value, "bytes"),
+                Label!("total", node.total_value, "bytes"),
+            ],
+        )
+        push!(samples, sample)
         
         child = node.children[child_index]
         increment!(stack)
@@ -76,7 +93,7 @@ function pprof_encode(root::FlameNode)
     prof = PProfile(
         sample_type = sample_type,
         sample = samples,
-        location = collect(values(locs)),
+        location = locs,
         var"#function" = collect(values(funcs)),
         string_table = collect(keys(string_table)),
         default_sample_type = 1, # events
