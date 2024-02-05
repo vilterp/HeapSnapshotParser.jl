@@ -1,12 +1,15 @@
 using ProtoBuf
 using OrderedCollections
 using CodecZlib
+import PProf
 import pprof_jll
 
 import PProf.perftools.profiles: Profile, ValueType, Sample, Function,
     Location, Line, Label
 
 const PProfile = Profile
+
+const proc = Ref{Union{Base.Process, Nothing}}(nothing)
 
 """
     _enter!(dict::OrderedDict{T, Int64}, key::T) where T
@@ -64,14 +67,15 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
         end
         
         # add entry
+        sanitized = sanitize_id(node.node.id)
         location = Location(
-            id = node.node.id,
+            id = sanitized,
         )
         push!(locs, location)
         
         sample = Sample(
             location_id = [
-                node.node.id
+                sanitized
                 for node in Iterators.reverse(nodes_vector(stack))
             ],
             value = value,
@@ -95,6 +99,14 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
     )
     
     return prof
+end
+
+function sanitize_id(id::Int)
+    if id == 0
+        return 1
+    else
+        return id
+    end
 end
 
 """
@@ -127,13 +139,16 @@ You can also use `PProf.refresh(file="...")` to open a new file in the server.
   ignored/hidden through the web UI to be ignored from totals when computing percentages.
 """
 function pprof(
-    profile::PProfile;
+    snapshot::ParsedSnapshot,
+    flame_graph::FlameNode;
     web::Bool = true,
     webhost::AbstractString = "localhost",
     webport::Integer = 60000,
     out::AbstractString = "profile.pb.gz",
     ui_relative_percentages::Bool = true,
 )
+    prof = pprof_encode(snapshot, flame_graph)
+
     # Write to disk
     io = GzipCompressorStream(open(out, "w"))
     try
