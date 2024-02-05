@@ -24,5 +24,6 @@ include("util.jl")
 include("pull-json.jl")
 include("pull-snapshot.jl")
 include("pprof.jl")
+include("sccs.jl")
 
 end # module
