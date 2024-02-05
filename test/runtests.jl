@@ -30,8 +30,8 @@ end
     snapshot = HeapSnapshotParser.parse_snapshot("../empty-2.heapsnapshot")
     flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
     pprof = HeapSnapshotParser.pprof_encode(flame_graph)
-    @test length(pprof.samples) > 0
-    @test length(pprof.locations) > 0
+    @test length(pprof.sample) > 0
+    @test length(pprof.location) > 0
 end
 
 @testset "tiny" begin

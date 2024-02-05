@@ -58,15 +58,8 @@ function pprof_encode(root::FlameNode)
     # visit every node in the flame graph
     stack = Stack()
     push!(stack, root)
-    i = 0
     while !isempty(stack)
-        if i % 100000 == 0
-            @info "iteration $i"
-        end
-        
         (node, child_index) = top(stack)
-        
-        @info "children" length(node.children)
         
         if child_index > length(node.children)
             pop!(stack)
@@ -77,19 +70,15 @@ function pprof_encode(root::FlameNode)
         increment!(stack)
         
         push!(stack, child)
-        
-        i += 1
     end
 
     # If from_c=false funcs and locs should NOT contain C functions
     prof = PProfile(
         sample_type = sample_type,
         sample = samples,
-        location =  collect(values(locs)),
+        location = collect(values(locs)),
         var"#function" = collect(values(funcs)),
         string_table = collect(keys(string_table)),
-        period_type = period_type,
-        period = sampling_delay,
         default_sample_type = 1, # events
     )
     
