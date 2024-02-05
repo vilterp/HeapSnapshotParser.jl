@@ -24,7 +24,7 @@ function _enter!(dict::OrderedDict{String, Int64}, key::String)
     return get!(dict, key, Int64(length(dict)))
 end
 
-function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
+function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
     string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
@@ -44,9 +44,10 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
 
     sample_type = [
         ValueType!("events", "count"), # Mandatory
+        ValueType!("size", "bytes"),
     ]
 
-    period_type = ValueType!("cpu", "nanoseconds")
+    period_type = ValueType!("heap", "bytes")
 
     # All samples get the same value for CPU profiles.
     value = [
@@ -54,9 +55,24 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
     ]
 
     lastwaszero = true  # (Legacy: used when has_meta = false)
+    
+    function enter_function()
+        Function(
+            id = XXX,
+            name = XXX,
+        )
+    end
 
-    # visit every node in the flame graph
-    # TODO: abstract out this visitor
+    function enter_location(id::Int)
+        location_id = sanitize_id(id)
+        location = Location(
+            id = location_id,
+            line = [
+                Line(function_id = func_id),
+            ],
+        )
+        push!(locs, location)
+    end
     
     i = 0
     visit(root) do node, stack
@@ -66,16 +82,9 @@ function pprof_encode(snapshot::ParsedSnapshot, root::FlameNode)
             return
         end
         
-        # add entry
-        sanitized = sanitize_id(node.node.id)
-        location = Location(
-            id = sanitized,
-        )
-        push!(locs, location)
-        
         sample = Sample(
             location_id = [
-                sanitized
+                enter_location(node.node.id)
                 for node in Iterators.reverse(nodes_vector(stack))
             ],
             value = value,
@@ -147,7 +156,7 @@ function pprof(
     out::AbstractString = "profile.pb.gz",
     ui_relative_percentages::Bool = true,
 )
-    prof = pprof_encode(snapshot, flame_graph)
+    prof = build_pprof(snapshot, flame_graph)
 
     # Write to disk
     io = GzipCompressorStream(open(out, "w"))
