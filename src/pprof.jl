@@ -24,7 +24,7 @@ function _enter!(dict::OrderedDict{String, Int64}, key::String)
     return get!(dict, key, Int64(length(dict)))
 end
 
-function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
+function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::Int = 100)
     string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
@@ -56,35 +56,38 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
 
     lastwaszero = true  # (Legacy: used when has_meta = false)
     
-    function enter_function()
-        Function(
-            id = XXX,
-            name = XXX,
-        )
-    end
+    # function enter_function()
+    #     Function(
+    #         id = XXX,
+    #         name = XXX,
+    #     )
+    # end
 
-    function enter_location(id::Int)
-        location_id = sanitize_id(id)
-        location = Location(
-            id = location_id,
-            line = [
-                Line(function_id = func_id),
-            ],
-        )
-        push!(locs, location)
-    end
+    # function enter_location(id::Int)
+    #     location_id = sanitize_id(id)
+    #     location = Location(
+    #         id = location_id,
+    #         line = [
+    #             Line(function_id = func_id),
+    #         ],
+    #     )
+    #     push!(locs, location)
+    # end
     
     i = 0
     visit(root) do node, stack
-        if i % 100 == 0
-            @info "processing node $i"
-        else
+        cur = i
+        i += 1
+        
+        if cur % sample_denom != 0
             return
         end
         
+        @info "processing node $cur"
+        
         sample = Sample(
             location_id = [
-                enter_location(node.node.id)
+                node.node.id
                 for node in Iterators.reverse(nodes_vector(stack))
             ],
             value = value,
@@ -93,8 +96,6 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
             ],
         )
         push!(samples, sample)
-        
-        i += 1
     end
 
     # If from_c=false funcs and locs should NOT contain C functions
