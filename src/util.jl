@@ -35,7 +35,9 @@ end
 function parse_string(input::Stream)
     start, finish = get_string_extent(input)
     
-    return String(input.data[start+1:finish-1])
+    arr = view(input.data, start+1:finish-1)
+    
+    return String(arr)
 end
 
 function get_string_extent(input::Stream)
