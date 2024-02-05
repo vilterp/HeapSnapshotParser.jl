@@ -4,10 +4,11 @@ using CodecZlib
 import PProf
 import pprof_jll
 
-import PProf.perftools.profiles: Profile, ValueType, Sample, Function,
+using PProf.perftools.profiles: Profile, ValueType, Sample,
     Location, Line, Label
 
 const PProfile = Profile
+const Func = PProf.perftools.profiles.Function
 
 const proc = Ref{Union{Base.Process, Nothing}}(nothing)
 
@@ -35,11 +36,9 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
     # Setup:
     enter!("")  # NOTE: pprof requires first entry to be ""
     # Functions need a uid, we'll use the pointer for the method instance
-    seen_funcs = Set{UInt64}()
-    funcs = Dict{UInt64, Function}()
+    funcs = Dict{UInt64, Func}()
 
-    seen_locs = Set{UInt64}()
-    locs = Vector{Location}()
+    locs = Dict{UInt64, Location}()
     samples = Vector{Sample}()
 
     sample_type = [
@@ -56,23 +55,34 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
 
     lastwaszero = true  # (Legacy: used when has_meta = false)
     
-    # function enter_function()
-    #     Function(
-    #         id = XXX,
-    #         name = XXX,
-    #     )
-    # end
+    function enter_function(node::FlameNode)
+        return get!(funcs, node.node.id) do
+            id = sanitize_id(node.node.id)
+            node_name = snapshot.strings[node.node.name]
+            name = if node.attr_name === nothing
+                node_name
+            else
+                "$(node.attr_name): $(node_name)"
+            end
+            return Func(
+                id = id,
+                name = enter!(name),
+            )
+        end
+    end
 
-    # function enter_location(id::Int)
-    #     location_id = sanitize_id(id)
-    #     location = Location(
-    #         id = location_id,
-    #         line = [
-    #             Line(function_id = func_id),
-    #         ],
-    #     )
-    #     push!(locs, location)
-    # end
+    function enter_location(node::FlameNode)
+        return get!(locs, node.node.id) do
+            id = sanitize_id(node.node.id)
+            func = enter_function(node)
+            return Location(
+                id = id,
+                line = [
+                    Line(function_id = func.id),
+                ],
+            )
+        end
+    end
     
     i = 0
     visit(root) do node, stack
@@ -83,11 +93,9 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
             return
         end
         
-        @info "processing node $cur"
-        
         sample = Sample(
             location_id = [
-                node.node.id
+                enter_location(node).id
                 for node in Iterators.reverse(nodes_vector(stack))
             ],
             value = value,
@@ -102,7 +110,7 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
     prof = PProfile(
         sample_type = sample_type,
         sample = samples,
-        location = locs,
+        location = collect(values(locs)),
         var"#function" = collect(values(funcs)),
         string_table = collect(keys(string_table)),
         default_sample_type = 1, # events

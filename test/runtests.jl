@@ -30,7 +30,7 @@ end
     snapshot = HeapSnapshotParser.parse_snapshot("../empty-2.heapsnapshot")
     flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
     @info "making into pprof"
-    pprof = HeapSnapshotParser.pprof_encode(snapshot, flame_graph)
+    pprof = HeapSnapshotParser.build_pprof(snapshot, flame_graph)
     @test length(pprof.sample) > 0
     @test length(pprof.location) > 0
 end
