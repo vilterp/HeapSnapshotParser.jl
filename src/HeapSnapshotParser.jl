@@ -1,7 +1,6 @@
 module HeapSnapshotParser
 
-using JSON3
-using StructEquality
+import Mmap
 
 include("raw-snapshot.jl")
 
@@ -12,10 +11,12 @@ const NUM_NODE_FIELDS = length(NODE_FIElDS)
 const EDGE_FIELDS = ["type", "name_or_index", "to_node"]
 const NUM_EDGE_FIELDS = length(EDGE_FIELDS)
 
-function parse_snapshot(file_path::String)
-    contents = Base.read(file_path)
-    stream = Stream(contents)
-    return pull_snapshot(stream)
+function parse_snapshot(path::String)
+    open(path) do file
+        contents = Mmap.mmap(file)
+        stream = Stream(contents)
+        return pull_snapshot(stream)
+    end
 end
 
 include("flame-graph.jl")
