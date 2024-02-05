@@ -77,10 +77,17 @@ function compute_sizes!(root::FlameNode)
     stack = Stack()
     push!(stack, root)
     return_value = 0
+    i = 0
     while !isempty(stack)
+        if i % 100000 == 0
+            @info "iteration $i"
+        end
+        
         (node, child_index) = top(stack)
         node.total_value += return_value
         return_value = 0
+        
+        @info "children" length(node.children)
         
         if child_index > length(node.children)
             pop!(stack)
@@ -93,6 +100,8 @@ function compute_sizes!(root::FlameNode)
         
         child.total_value = child.self_value
         push!(stack, child)
+        
+        i += 1
     end
 end
 
