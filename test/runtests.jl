@@ -181,3 +181,8 @@ end
     @test JSON.json(dict, 4) == expected
 end
 
+@testset "sccs" begin
+    snapshot = HeapSnapshotParser.parse_snapshot("../empty-2.heapsnapshot")
+    lightgraph = HeapSnapshotParser.as_lightgraph(snapshot)
+end
+

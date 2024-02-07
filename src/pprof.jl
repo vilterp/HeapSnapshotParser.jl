@@ -25,7 +25,7 @@ function _enter!(dict::OrderedDict{String, Int64}, key::String)
     return get!(dict, key, Int64(length(dict)))
 end
 
-function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::Int = 10_000)
+function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::Int=10_000, max_depth::Int=200)
     string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
@@ -78,9 +78,11 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
     end
     
     i = 0
-    visit(root) do node, stack
+    visit(root; max_depth=max_depth) do node, stack
         cur = i
         i += 1
+        
+        @info "foo" node
         
         if cur % sample_denom != 0
             return
@@ -156,13 +158,14 @@ You can also use `PProf.refresh(file="...")` to open a new file in the server.
 function pprof(
     snapshot::ParsedSnapshot,
     flame_graph::FlameNode;
+    sample_denom::Int = 100_000,
     web::Bool = true,
     webhost::AbstractString = "localhost",
     webport::Integer = 60000,
     out::AbstractString = "profile.pb.gz",
     ui_relative_percentages::Bool = true,
 )
-    prof = build_pprof(snapshot, flame_graph)
+    prof = build_pprof(snapshot, flame_graph; sample_denom = sample_denom)
 
     # Write to disk
     io = GzipCompressorStream(open(out, "w"))

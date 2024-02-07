@@ -166,13 +166,17 @@ function nodes_vector(stack::Stack)
     return stack.nodes
 end
 
-function visit(f::Function, root::FlameNode)
+function visit(f::Function, root::FlameNode; max_depth::Union{Int,Nothing}=nothing)
     stack = Stack()
     push!(stack, root)
     while !isempty(stack)
         node, child_index = top(stack)
         
-        if child_index > length(node.children)
+        at_max_depth = max_depth !== nothing && length(stack.nodes) > max_depth
+        if at_max_depth
+            @info "at max depth" length(stack.nodes)
+        end
+        if child_index > length(node.children) || at_max_depth
             pop!(stack)
             continue
         end
