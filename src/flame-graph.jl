@@ -81,7 +81,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         push!(seen, edge.to)
         child = flame_nodes[edge.to]
         child.parent = node
-        child.attr_name = snapshot.strings[edge.name]
+        child.attr_name = get_attr_name(snapshot, edge)
         push!(node.children, child)
         
         push!(stack, child)
@@ -91,6 +91,22 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     compute_sizes!(root_flame_node)
     
     return root_flame_node
+end
+
+function get_attr_name(snapshot::ParsedSnapshot, edge::RawEdge)
+    if edge.kind == :property
+        return snapshot.strings[edge.name]
+    end
+    if edge.kind == :internal
+        return "<internal>"
+    end
+    if edge.kind == :element
+        return "$(edge.to)"
+    end
+    if edge.kind == :hidden
+        return "<hidden>"
+    end
+    error("unknown kind: $kind")
 end
 
 function compute_sizes!(root::FlameNode)
