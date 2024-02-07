@@ -40,6 +40,8 @@ const AVOID_SET = Set{String}([
     "GlobalRef",
     "TypeVar",
     "Method",
+    "Task",
+    "(stack frame)"
 ])
 
 function get_flame_graph(snapshot::ParsedSnapshot)
