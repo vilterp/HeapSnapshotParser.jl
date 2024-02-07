@@ -144,3 +144,21 @@ function expect_string(input::PullJson, expected::String)
         error("expected $expected; got $got")
     end
 end
+
+function get_array(f::Function, input::PullJson)
+    get_array_start(input)
+    munch_whitespace(input.input)
+    while true
+        f()
+        munch_whitespace(input.input)
+        c = peek(input.input, Char)
+        if c == ']'
+            break
+        elseif c == ','
+            get_comma(input)
+        elseif c != ','
+            error("expected , or ] but got $c")
+        end
+    end
+    get_array_end(input)
+end

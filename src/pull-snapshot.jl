@@ -2,13 +2,66 @@ function pull_snapshot(stream::Stream)
     input = HeapSnapshotParser.PullJson(stream)
     snapshot = ParsedSnapshot()
     
+    edge_types = Vector{String}()
+    
     get_object_start(input)
     
     # snapshot
     expect_string(input, "snapshot")
     get_colon(input)
-    skip_value(input)
+    get_object_start(input)
+    begin
+        expect_string(input, "meta")
+        get_colon(input)
+        get_object_start(input)
+        begin
+            expect_string(input, "node_fields")
+            get_colon(input)
+            skip_value(input)
+            get_comma(input)
+            
+            expect_string(input, "node_types")
+            get_colon(input)
+            skip_value(input)
+            get_comma(input)
+
+            expect_string(input, "edge_fields")
+            get_colon(input)
+            skip_value(input)
+            get_comma(input)
+            
+            expect_string(input, "edge_types")
+            get_colon(input)
+            get_array_start(input)
+            begin
+                get_array(input) do
+                    str = get_string(input)
+                    push!(edge_types, str)
+                end
+                get_comma(input)
+
+                skip_value(input)
+                get_comma(input)
+                skip_value(input)
+            end
+            get_array_end(input)
+        end
+        get_object_end(input)
+        
+        get_comma(input)
+        expect_string(input, "node_count")
+        get_colon(input)
+        node_count = get_int(input)
+        
+        get_comma(input)
+        expect_string(input, "edge_count")
+        get_colon(input)
+        edge_count = get_int(input)
+    end
+    get_object_end(input)
     get_comma(input)
+    
+    @info "types" edge_types
     
     # nodes
     @info "nodes"
@@ -22,7 +75,7 @@ function pull_snapshot(stream::Stream)
         
         edge_index += num_edges
 
-        munch_whitespace(input.input)        
+        munch_whitespace(input.input)
         char = peek(input.input, Char)
         if char == ']'
             break
@@ -41,7 +94,7 @@ function pull_snapshot(stream::Stream)
     get_colon(input)
     get_array_start(input)
     while true
-        edge = pull_edge(input)
+        edge = pull_edge(edge_types, input)
         push!(snapshot.edges, edge)
 
         munch_whitespace(input.input)        
@@ -81,7 +134,7 @@ function pull_snapshot(stream::Stream)
     return snapshot
 end
 
-function pull_edge(input::PullJson)
+function pull_edge(edge_types::Vector{String}, input::PullJson)
     kind = get_int(input, whitespace=false) + 1
     get_comma(input, whitespace=false)
     
@@ -90,7 +143,9 @@ function pull_edge(input::PullJson)
     
     to = div(get_int(input), NUM_NODE_FIELDS) + 1
     
-    return RawEdge(kind, name, to)
+    kind_sym = Symbol(edge_types[kind])
+    
+    return RawEdge(kind_sym, name, to)
 end
 
 function pull_node(input::PullJson, edge_index::Int)
