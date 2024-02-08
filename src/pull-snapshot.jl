@@ -136,12 +136,8 @@ function pull_node(input::PullJson, edge_index::Int)
     
     detatchedness = get_int(input, whitespace=false)
     
-    range = if num_edges == 0
-        1:0
-    else
-        edge_index:(edge_index + num_edges - 1)
-    end
-    
+    range = edge_index:(edge_index + num_edges - 1)
+
     node = RawNode(kind, name, id, self_size, range)
     
     return node, num_edges
