@@ -1,5 +1,6 @@
 struct RestNode
     num::Int
+    first_child_id::Int
 end
 
 mutable struct FlameNode
@@ -244,4 +245,25 @@ function visit(f::Function, root::FlameNode)
         increment!(stack)
         push!(stack, child)
     end
+end
+
+function get_id(node::FlameNode)
+    if node.node isa RawNode
+        return node.node.id
+    end
+    return node.node.first_child_id
+end
+
+function get_name(snapshot::ParsedSnapshot, node::FlameNode)
+    if node.node isa RawNode
+        node_name = snapshot.strings[node.node.name]
+        num_out_edges = length(node.node.edge_indexes)
+        suffix = "$(node_name) ($(format_bytes(node.total_value)) total size) ($num_out_edges out edges) (id $(node.node.id))"
+        return if node.attr_name === nothing
+            suffix
+        else
+            "$(node.attr_name): $(suffix)"
+        end
+    end
+    return "$(node.node.num) more ($(format_bytes(node.total_value)) total size)"
 end

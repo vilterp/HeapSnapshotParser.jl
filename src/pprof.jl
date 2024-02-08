@@ -38,7 +38,7 @@ function format_bytes(bytes::Int)
     return "$num$unit"
 end
 
-function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::Float64)
+function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
     string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
@@ -46,9 +46,6 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::
     Label!(key, value, unit) = Label(key = enter!(key), num = value, num_unit = enter!(unit))
     Label!(key, value) = Label(key = enter!(key), str = enter!(string(value)))
 
-    @info "total size"
-    total_size = sum(node.self_size for node in snapshot.nodes)
-    
     @info "build samples"
 
     # Setup:
@@ -67,16 +64,10 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::
     period_type = ValueType!("heap", "bytes")
 
     function enter_function(node::FlameNode)
-        return get!(funcs, node.node.id) do
-            id = sanitize_id(node.node.id)
-            node_name = snapshot.strings[node.node.name]
-            num_out_edges = length(node.node.edge_indexes)
-            suffix = "$(node_name) ($(format_bytes(node.total_value)) total size) ($num_out_edges out edges) (id $(node.node.id))"
-            name = if node.attr_name === nothing
-                suffix
-            else
-                "$(node.attr_name): $(suffix)"
-            end
+        raw_id = get_id(node)
+        return get!(funcs, raw_id) do
+            id = sanitize_id(raw_id)
+            name = get_name(snapshot, node)
             return Func(
                 id = id,
                 name = enter!(name),
@@ -85,8 +76,9 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::
     end
 
     function enter_location(node::FlameNode)
-        return get!(locs, node.node.id) do
-            id = sanitize_id(node.node.id)
+        raw_id = get_id(node)
+        return get!(locs, raw_id) do
+            id = sanitize_id(raw_id)
             func = enter_function(node)
             return Location(
                 id = id,
@@ -98,12 +90,6 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::
     end
     
     visit(root) do node, stack
-        # Skip nodes that are too small
-        # Not sure if using total size makes sense here
-        if node.total_value / total_size < size_threshold
-            return
-        end
-        
         sample = Sample(
             location_id = [
                 enter_location(node).id
@@ -180,7 +166,7 @@ function pprof(
     out::AbstractString = "profile.pb.gz",
     ui_relative_percentages::Bool = true,
 )
-    prof = build_pprof(snapshot, flame_graph; size_threshold=size_threshold)
+    prof = build_pprof(snapshot, flame_graph)
 
     # Write to disk
     io = GzipCompressorStream(open(out, "w"))

@@ -7,12 +7,16 @@ function top_tree(node::FlameNode; top_pct::Float64=0.75)
     
     rest_num = 0
     rest_total = 0
+    rest_first_id = 0
 
     for child in children_by_size
         if new_total_size >= goal_size
+            if rest_first_id == 0
+                rest_first_id = child.node.id
+            end
             rest_num += 1
             rest_total += child.total_value
-            break
+            continue
         end
        
         new_total_size += child.total_value
@@ -22,7 +26,7 @@ function top_tree(node::FlameNode; top_pct::Float64=0.75)
     
     if rest_num > 0
         rest = FlameNode(
-            RestNode(rest_num),
+            RestNode(rest_num, rest_first_id),
             "", # TODO: refactor this away
             rest_total,
             rest_total,
