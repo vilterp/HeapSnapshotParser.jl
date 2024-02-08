@@ -51,6 +51,8 @@ const AVOID_SET = Set{String}([
 
 function get_flame_graph(snapshot::ParsedSnapshot)
     @info "assembling flame nodes"
+    
+    str_id = findfirst(isequal("RAICode.Compiler.Front.NamespaceDecl"), snapshot.strings)
 
     @time flame_nodes = assemble_flame_nodes(snapshot)
     
@@ -68,28 +70,48 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     stack = Stack()
     push!(stack, root_flame_node)
     
+    i = 0
     @info "getting spanning tree"
     
     while !isempty(stack)
         node, child_index = top(stack)
+        
+        # debug logging
+        if node.node.name == str_id && i % 1000 == 0
+            out_edges = get_out_edges(snapshot, node.node)
+            println(Dict(
+                edge => snapshot.strings[node.name]
+                for (edge, node) in out_edges
+            ))
+        end
+        # end debug logging
+        
+        # pop the stack if we're done with this node
         at_last_child = child_index > length(node.node.edge_indexes)
         if at_last_child || should_avoid(node.node)
             pop!(stack)
             continue
         end
+        
+        # Look at the next edge
         edge_idx = node.node.edge_indexes[child_index]
         edge = snapshot.edges[edge_idx]
         increment!(stack)
+        
+        # Skip it if we've already seen it
         if in(edge.to, seen)
             continue
         end
+        
+        # Look at the next child
         push!(seen, edge.to)
         child = flame_nodes[edge.to]
         child.parent = node
         child.attr_name = get_attr_name(snapshot, edge)
         push!(node.children, child)
-        
         push!(stack, child)
+
+        i += 1
     end
     
     @info "computing sizes"
