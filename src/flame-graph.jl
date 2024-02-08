@@ -49,10 +49,16 @@ const AVOID_SET = Set{String}([
     "TOML",
 ])
 
+const NOT_SUPPOSED_TO_HAVE_ENTRIES = Set{String}([
+    "RAICode.Compiler.Front.NamespaceDecl",
+    "RAICode.Compiler.Front.ShapeScalar",
+    "Array{RAICode.Compiler.Shared.AnonymousRel, 1}"
+])
+
 function get_flame_graph(snapshot::ParsedSnapshot)
     @info "assembling flame nodes"
     
-    str_id = findfirst(isequal("RAICode.Compiler.Front.NamespaceDecl"), snapshot.strings)
+    str_ids = Set(findfirst(isequal(s), snapshot.strings) for s in NOT_SUPPOSED_TO_HAVE_ENTRIES)
 
     @time flame_nodes = assemble_flame_nodes(snapshot)
     
@@ -93,22 +99,27 @@ function get_flame_graph(snapshot::ParsedSnapshot)
             continue
         end
         
+        child = flame_nodes[edge.to]
+        attr_name = get_attr_name(snapshot, edge)
+        
+        # debug logging
+        if attr_name == "entries" && node.node.name in str_ids
+            # out_edges = get_out_edges(snapshot, node.node)
+            # @info "wut" out_types=Dict(
+            #     edge => snapshot.strings[node.name]
+            #     for (edge, node) in out_edges
+            # )
+            @info "wut"
+            pop!(stack)
+            continue
+        end
+        
         # Look at the next child
         push!(seen, edge.to)
-        child = flame_nodes[edge.to]
         child.parent = node
-        child.attr_name = get_attr_name(snapshot, edge)
+        child.attr_name = attr_name
         push!(node.children, child)
         push!(stack, child)
-
-        # debug logging
-        if child.attr_name == "entries" && node.node.name == str_id
-            out_edges = get_out_edges(snapshot, node.node)
-            @info "wut" out_types=Dict(
-                edge => snapshot.strings[node.name]
-                for (edge, node) in out_edges
-            )
-        end
 
         i += 1
     end
