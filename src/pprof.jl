@@ -52,10 +52,11 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
         return get!(funcs, node.node.id) do
             id = sanitize_id(node.node.id)
             node_name = snapshot.strings[node.node.name]
+            num_out_edges = length(node.node.edge_indexes)
             name = if node.attr_name === nothing
-                "$(node.node.id) $node_name"
+                "$node_name ($num_out_edges out edges) (id $(node.node.id))"
             else
-                "$(node.attr_name): $(node.node.id): $(node_name)"
+                "$(node.attr_name): $(node_name) ($num_out_edges out edges) (id $(node.node.id))"
             end
             return Func(
                 id = id,
