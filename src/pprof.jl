@@ -114,7 +114,6 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::
         push!(samples, sample)
     end
 
-    # If from_c=false funcs and locs should NOT contain C functions
     prof = PProfile(
         sample_type = sample_type,
         sample = samples,
