@@ -25,16 +25,20 @@ function _enter!(dict::OrderedDict{String, Int64}, key::String)
     return get!(dict, key, Int64(length(dict)))
 end
 
+const UNITS = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+
 function format_bytes(bytes::Int)
-    units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+    if bytes == 0
+        return "0B"
+    end
     i = Int(floor(log2(bytes) / 10))
     bytes /= 2^(10 * i)
     num = round(bytes, digits=2)
-    unit = units[i+1]
+    unit = UNITS[i+1]
     return "$num$unit"
 end
 
-function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::Float64, max_depth::Int)
+function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::Float64)
     string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
@@ -94,14 +98,10 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::
     end
     
     visit(root) do node, stack
-        if node.total_value / total_size < size_threshold
-            return
-        end
-        
         sample = Sample(
             location_id = [
                 enter_location(node).id
-                for node in Iterators.reverse(first(nodes_vector(stack), max_depth))
+                for node in Iterators.reverse(nodes_vector(stack))
             ],
             value = [
                 1,               # events
@@ -169,14 +169,13 @@ function pprof(
     snapshot::ParsedSnapshot,
     flame_graph::FlameNode;
     size_threshold::Float64 = 0.001,
-    max_depth::Int = 1000,
     web::Bool = true,
     webhost::AbstractString = "localhost",
     webport::Integer = 60000,
     out::AbstractString = "profile.pb.gz",
     ui_relative_percentages::Bool = true,
 )
-    prof = build_pprof(snapshot, flame_graph; size_threshold=size_threshold, max_depth=max_depth)
+    prof = build_pprof(snapshot, flame_graph; size_threshold=size_threshold)
 
     # Write to disk
     io = GzipCompressorStream(open(out, "w"))
