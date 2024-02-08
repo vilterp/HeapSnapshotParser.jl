@@ -76,16 +76,6 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     while !isempty(stack)
         node, child_index = top(stack)
         
-        # debug logging
-        if node.node.name == str_id && i % 1000 == 0
-            out_edges = get_out_edges(snapshot, node.node)
-            println(Dict(
-                edge => snapshot.strings[node.name]
-                for (edge, node) in out_edges
-            ))
-        end
-        # end debug logging
-        
         # pop the stack if we're done with this node
         at_last_child = child_index > length(node.node.edge_indexes)
         if at_last_child || should_avoid(node.node)
@@ -110,6 +100,15 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         child.attr_name = get_attr_name(snapshot, edge)
         push!(node.children, child)
         push!(stack, child)
+
+        # debug logging
+        if child.attr_name == "entries" && node.node.name == str_id
+            out_edges = get_out_edges(snapshot, node.node)
+            @info "wut" out_types=Dict(
+                edge => snapshot.strings[node.name]
+                for (edge, node) in out_edges
+            )
+        end
 
         i += 1
     end
