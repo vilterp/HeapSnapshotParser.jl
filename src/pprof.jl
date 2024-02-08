@@ -98,6 +98,12 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::
     end
     
     visit(root) do node, stack
+        # Skip nodes that are too small
+        # Not sure if using total size makes sense here
+        if node.total_value / total_size < size_threshold
+            return
+        end
+        
         sample = Sample(
             location_id = [
                 enter_location(node).id
