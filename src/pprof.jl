@@ -53,9 +53,9 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
             id = sanitize_id(node.node.id)
             node_name = snapshot.strings[node.node.name]
             name = if node.attr_name === nothing
-                node_name
+                "$(node.node.id) $node_name"
             else
-                "$(node.attr_name): $(node_name)"
+                "$(node.attr_name): $(node.node.id): $(node_name)"
             end
             return Func(
                 id = id,
