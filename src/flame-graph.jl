@@ -1,6 +1,5 @@
 struct RestNode
     num::Int
-    size::Int
 end
 
 mutable struct FlameNode

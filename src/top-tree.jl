@@ -1,17 +1,35 @@
-function top_tree(node::FlameNode, top_pct::Float64=0.75)
+function top_tree(node::FlameNode; top_pct::Float64=0.75)
     children_by_size = sort(node.children, by=x->x.total_value, rev=true)
     new_children = []
     
     goal_size = node.total_value * top_pct
     new_total_size = 0
+    
+    rest_num = 0
+    rest_total = 0
+
     for child in children_by_size
         if new_total_size >= goal_size
+            rest_num += 1
+            rest_total += child.total_value
             break
         end
        
         new_total_size += child.total_value
-        new_child = top_tree(child, top_pct)
+        new_child = top_tree(child; top_pct)
         push!(new_children, new_child)
+    end
+    
+    if rest_num > 0
+        rest = FlameNode(
+            RestNode(rest_num),
+            "", # TODO: refactor this away
+            rest_total,
+            rest_total,
+            node,
+            Vector{FlameNode}(),
+        )
+        push!(new_children, rest)
     end
     
     return FlameNode(
