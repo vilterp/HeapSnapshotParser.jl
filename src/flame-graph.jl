@@ -41,7 +41,12 @@ const AVOID_SET = Set{String}([
     "TypeVar",
     "Method",
     "Task",
-    "(stack frame)"
+    "(stack frame)",
+    "Base.Docs.Binding",
+    "Base.Docs.DocStr",
+    "Base.Docs.MultiDoc",
+    "TOML_CACHE",
+    "TOML",
 ])
 
 function get_flame_graph(snapshot::ParsedSnapshot)
