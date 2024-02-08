@@ -31,3 +31,15 @@ function size(node::FlameNode)
     end
     return i
 end
+
+function leaves(root::FlameNode)
+    leaves = Vector{FlameNode}()
+    i = 0
+    visit(root) do node, stack
+        i += 1
+        if length(node.node.edge_indexes) == 0
+            push!(leaves, node)
+        end
+    end
+    return leaves
+end
