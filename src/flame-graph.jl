@@ -49,12 +49,12 @@ function get_flame_graph(snapshot::ParsedSnapshot)
 
     @time flame_nodes = assemble_flame_nodes(snapshot)
     
+    # avoid these types while computing spanning tree
     avoid_ids = Set(
         findfirst(isequal(str), snapshot.strings)
         for str in AVOID_SET
     )
-    @info "avoid" AVOID_SET avoid_ids
-    
+    @info "avoid" AVOID_SET
     should_avoid = node -> node.name in avoid_ids
     
     # do DFS
@@ -101,7 +101,7 @@ function get_attr_name(snapshot::ParsedSnapshot, edge::RawEdge)
         return "<internal>"
     end
     if edge.kind == :element
-        return "$(edge.to)"
+        return "<element>"
     end
     if edge.kind == :hidden
         return "<hidden>"
