@@ -1,5 +1,10 @@
+struct RestNode
+    num::Int
+    size::Int
+end
+
 mutable struct FlameNode
-    node::RawNode
+    node::Union{RawNode,RestNode}
     attr_name::Union{Nothing,String}
     self_value::Int
     total_value::Int
