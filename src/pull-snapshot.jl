@@ -61,52 +61,29 @@ function pull_snapshot(stream::Stream)
     get_object_end(input)
     get_comma(input)
     
-    @info "types" edge_types
-    
     # nodes
     @info "nodes"
     expect_string(input, "nodes")
     get_colon(input)
-    get_array_start(input)
+    
     edge_index = 1
-    while true
+    get_array(input) do
         node, num_edges = pull_node(input, edge_index)
         push!(snapshot.nodes, node)
         
         edge_index += num_edges
-
-        munch_whitespace(input.input)
-        char = peek(input.input, Char)
-        if char == ']'
-            break
-        end
-        if char == ','
-            get_comma(input)
-        end
     end
-    get_array_end(input)
-
     get_comma(input)
     
     # edges
     @info "edges"
     expect_string(input, "edges")
     get_colon(input)
-    get_array_start(input)
-    while true
+    
+    get_array(input) do
         edge = pull_edge(edge_types, input)
         push!(snapshot.edges, edge)
-
-        munch_whitespace(input.input)        
-        char = peek(input.input, Char)
-        if char == ']'
-            break
-        end
-        if char == ','
-            get_comma(input)
-        end
     end
-    get_array_end(input)
     get_comma(input)
     
     # strings
