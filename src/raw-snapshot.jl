@@ -9,7 +9,7 @@ struct RawNode
 end
 
 struct RawEdge
-    kind::Int
+    kind::Symbol
     name::Int
     to::NodeIdx
 end

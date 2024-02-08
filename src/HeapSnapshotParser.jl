@@ -24,6 +24,16 @@ include("util.jl")
 include("pull-json.jl")
 include("pull-snapshot.jl")
 include("pprof.jl")
+include("sccs.jl")
+include("top-tree.jl")
+
+function get_out_edges(snapshot::ParsedSnapshot, node::RawNode)
+    edges = snapshot.edges[node.edge_indexes]
+    return Dict(
+        snapshot.strings[edge.name] => snapshot.nodes[edge.to]
+        for edge in edges
+    )
+end
 
 function get_out_edges(snapshot::ParsedSnapshot, node::RawNode)
     edges = [snapshot.edges[i] for i in node.edge_indexes]

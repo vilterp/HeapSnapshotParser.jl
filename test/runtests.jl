@@ -29,7 +29,7 @@ end
     snapshot = HeapSnapshotParser.parse_snapshot("../empty-2.heapsnapshot")
     flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
     @info "making into pprof"
-    pprof = HeapSnapshotParser.build_pprof(snapshot, flame_graph)
+    pprof = HeapSnapshotParser.build_pprof(snapshot, flame_graph; sample_denom=1000, max_depth=100)
     @test length(pprof.sample) > 0
     @test length(pprof.location) > 0
 end
@@ -59,35 +59,35 @@ end
     "total_value": 2304,
     "children": [
         {
-            "name": "root task: Task",
+            "name": "<internal>: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
             "children": []
         },
         {
-            "name": "root task: Task",
+            "name": "<internal>: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
             "children": []
         },
         {
-            "name": "current task: Task",
+            "name": "<internal>: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
             "children": []
         },
         {
-            "name": "root task: Task",
+            "name": "<internal>: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
             "children": []
         },
         {
-            "name": "current task: Task",
+            "name": "<internal>: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
@@ -120,55 +120,76 @@ end
     expected = (
 """{
     "name": "",
-    "num_children": 4,
+    "num_children": 8,
     "self_value": 0,
-    "total_value": 146495820,
+    "total_value": 14658045,
     "children": [
         {
-            "name": "root task: Task",
-            "num_children": 3,
-            "self_value": 384,
-            "total_value": 146494668,
+            "name": "<internal>: Main",
+            "num_children": 28,
+            "self_value": 624,
+            "total_value": 14655740,
             "children": [
                 {
-                    "name": "stack: (stack frame)",
-                    "num_children": 3,
-                    "self_value": 1,
-                    "total_value": 146494251,
+                    "name": "<native>: Base",
+                    "num_children": 2,
+                    "self_value": 48,
+                    "total_value": 14586244,
                     "children": []
                 },
                 {
-                    "name": "storage: Base.IdDict{Any, Any}",
+                    "name": "<hidden>: <inline>",
                     "num_children": 0,
-                    "self_value": 32,
-                    "total_value": 32,
+                    "self_value": 65536,
+                    "total_value": 65536,
                     "children": []
                 },
                 {
-                    "name": "stack: (stack frame)",
-                    "num_children": 0,
-                    "self_value": 1,
-                    "total_value": 1,
+                    "name": "<native>: Revise",
+                    "num_children": 1,
+                    "self_value": 48,
+                    "total_value": 1712,
+                    "children": []
+                },
+                {
+                    "name": "<native>: #1#2",
+                    "num_children": 1,
+                    "self_value": 48,
+                    "total_value": 351,
+                    "children": []
+                },
+                {
+                    "name": "<native>: time_ns",
+                    "num_children": 1,
+                    "self_value": 48,
+                    "total_value": 80,
                     "children": []
                 }
             ]
         },
         {
-            "name": "root task: Task",
+            "name": "<internal>: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
             "children": []
         },
         {
-            "name": "root task: Task",
+            "name": "<internal>: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
             "children": []
         },
         {
-            "name": "root task: Task",
+            "name": "<internal>: Task",
+            "num_children": 0,
+            "self_value": 384,
+            "total_value": 384,
+            "children": []
+        },
+        {
+            "name": "<internal>: Task",
             "num_children": 0,
             "self_value": 384,
             "total_value": 384,
@@ -179,5 +200,10 @@ end
 """)
     
     @test JSON.json(dict, 4) == expected
+end
+
+@testset "sccs" begin
+    snapshot = HeapSnapshotParser.parse_snapshot("../empty-2.heapsnapshot")
+    lightgraph = HeapSnapshotParser.as_lightgraph(snapshot)
 end
 

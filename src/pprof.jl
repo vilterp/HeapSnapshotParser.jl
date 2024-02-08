@@ -25,13 +25,31 @@ function _enter!(dict::OrderedDict{String, Int64}, key::String)
     return get!(dict, key, Int64(length(dict)))
 end
 
-function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::Int = 10_000)
+const UNITS = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+
+function format_bytes(bytes::Int)
+    if bytes == 0
+        return "0B"
+    end
+    i = Int(floor(log2(bytes) / 10))
+    bytes /= 2^(10 * i)
+    num = round(bytes, digits=2)
+    unit = UNITS[i+1]
+    return "$num$unit"
+end
+
+function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; size_threshold::Float64)
     string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
     ValueType!(_type, unit) = ValueType(enter!(_type), enter!(unit))
     Label!(key, value, unit) = Label(key = enter!(key), num = value, num_unit = enter!(unit))
     Label!(key, value) = Label(key = enter!(key), str = enter!(string(value)))
+
+    @info "total size"
+    total_size = sum(node.self_size for node in snapshot.nodes)
+    
+    @info "build samples"
 
     # Setup:
     enter!("")  # NOTE: pprof requires first entry to be ""
@@ -52,10 +70,12 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
         return get!(funcs, node.node.id) do
             id = sanitize_id(node.node.id)
             node_name = snapshot.strings[node.node.name]
+            num_out_edges = length(node.node.edge_indexes)
+            suffix = "$(node_name) ($(format_bytes(node.total_value)) total size) ($num_out_edges out edges) (id $(node.node.id))"
             name = if node.attr_name === nothing
-                node_name
+                suffix
             else
-                "$(node.attr_name): $(node_name)"
+                "$(node.attr_name): $(suffix)"
             end
             return Func(
                 id = id,
@@ -77,12 +97,10 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
         end
     end
     
-    i = 0
     visit(root) do node, stack
-        cur = i
-        i += 1
-        
-        if cur % sample_denom != 0
+        # Skip nodes that are too small
+        # Not sure if using total size makes sense here
+        if node.total_value / total_size < size_threshold
             return
         end
         
@@ -102,7 +120,6 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode; sample_denom::In
         push!(samples, sample)
     end
 
-    # If from_c=false funcs and locs should NOT contain C functions
     prof = PProfile(
         sample_type = sample_type,
         sample = samples,
@@ -156,13 +173,14 @@ You can also use `PProf.refresh(file="...")` to open a new file in the server.
 function pprof(
     snapshot::ParsedSnapshot,
     flame_graph::FlameNode;
+    size_threshold::Float64 = 0.001,
     web::Bool = true,
     webhost::AbstractString = "localhost",
     webport::Integer = 60000,
     out::AbstractString = "profile.pb.gz",
     ui_relative_percentages::Bool = true,
 )
-    prof = build_pprof(snapshot, flame_graph)
+    prof = build_pprof(snapshot, flame_graph; size_threshold=size_threshold)
 
     # Write to disk
     io = GzipCompressorStream(open(out, "w"))
