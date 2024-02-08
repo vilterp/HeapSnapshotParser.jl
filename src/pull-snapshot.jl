@@ -90,21 +90,11 @@ function pull_snapshot(stream::Stream)
     @info "strings"
     expect_string(input, "strings")
     get_colon(input)
-    get_array_start(input)
-    while true
+    
+    get_array(input) do
         str = get_string(input)
         push!(snapshot.strings, str)
-
-        munch_whitespace(input.input)        
-        char = peek(input.input, Char)
-        if char == ']'
-            break
-        end
-        if char == ','
-            get_comma(input)
-        end
     end
-    get_array_end(input)
     
     get_object_end(input)
     
