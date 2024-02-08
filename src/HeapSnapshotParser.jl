@@ -25,6 +25,7 @@ include("pull-json.jl")
 include("pull-snapshot.jl")
 include("pprof.jl")
 include("sccs.jl")
+include("top-tree.jl")
 
 function get_out_edges(snapshot::ParsedSnapshot, node::RawNode)
     edges = snapshot.edges[node.edge_indexes]
