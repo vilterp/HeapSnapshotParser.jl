@@ -32,39 +32,10 @@ function assemble_flame_nodes(snapshot::ParsedSnapshot)
     return flame_nodes
 end
 
-const AVOID_SET = Set{String}([
-    "Core.MethodTable",
-    "Core.MethodInstance",
-    "SimpleVector",
-    "Core.TypeName",
-    "GlobalRef",
-    "TypeVar",
-    "Method",
-    "Task",
-    "(stack frame)",
-    "Base.Docs.Binding",
-    "Base.Docs.DocStr",
-    "Base.Docs.MultiDoc",
-    "TOML_CACHE",
-    "TOML",
-    "Docs",
-    "Revise",
-    "loaded_modules",
-    "Destructors",
-])
-
 function get_flame_graph(snapshot::ParsedSnapshot)
     @info "assembling flame nodes"
     
     @time flame_nodes = assemble_flame_nodes(snapshot)
-    
-    # avoid these types while computing spanning tree
-    avoid_ids = Set(
-        findfirst(isequal(str), snapshot.strings)
-        for str in AVOID_SET
-    )
-    @info "avoid" AVOID_SET
-    should_avoid = node -> node.name in avoid_ids
     
     # do DFS
     seen = Set{UInt64}() # set of node indexes
@@ -79,8 +50,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         node, child_index = top(stack)
         
         # pop the stack if we're done with this node
-        at_last_child = child_index > length(node.node.edge_indexes)
-        if at_last_child || should_avoid(node.node)
+        if child_index > length(node.node.edge_indexes)
             pop!(stack)
             continue
         end
