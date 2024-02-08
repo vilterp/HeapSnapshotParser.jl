@@ -47,6 +47,10 @@ const AVOID_SET = Set{String}([
     "Base.Docs.MultiDoc",
     "TOML_CACHE",
     "TOML",
+    "Docs",
+    "Revise",
+    "loaded_modules",
+    "Destructors",
 ])
 
 function get_flame_graph(snapshot::ParsedSnapshot)
