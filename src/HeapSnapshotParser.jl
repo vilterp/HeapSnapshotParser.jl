@@ -19,7 +19,7 @@ function parse_snapshot(path::String)
     end
 end
 
-include("flame-graph.jl")
+include("spanning-tree.jl")
 include("parse-util.jl")
 include("pull-json.jl")
 include("pull-snapshot.jl")
