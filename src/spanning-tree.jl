@@ -5,27 +5,27 @@ struct RestNode
     first_child_id::Int
 end
 
-mutable struct FlameNode
+mutable struct TreeNode
     node::Union{RawNode,RestNode}
     attr_name::Union{Nothing,String}
     self_value::Int
     total_value::Int
-    parent::Union{FlameNode,Nothing}
-    children::Vector{FlameNode}
+    parent::Union{TreeNode,Nothing}
+    children::Vector{TreeNode}
 end
 
-function FlameNode(node::RawNode)
-    return FlameNode(node, nothing, node.self_size, 0, nothing, Vector{FlameNode}())
+function TreeNode(node::RawNode)
+    return TreeNode(node, nothing, node.self_size, 0, nothing, Vector{TreeNode}())
 end
 
-function Base.show(io::IO, node::FlameNode)
-    print(io, "FlameNode($(node.attr_name): $(node.node), $(node.self_value) self, $(node.total_value) total, $(length(node.children)) children)")
+function Base.show(io::IO, node::TreeNode)
+    print(io, "TreeNode($(node.attr_name): $(node.node), $(node.self_value) self, $(node.total_value) total, $(length(node.children)) children)")
 end
 
 function assemble_flame_nodes(snapshot::ParsedSnapshot)
-    flame_nodes = Dict{UInt64,FlameNode}()
+    flame_nodes = Dict{UInt64,TreeNode}()
     for (idx, node) in enumerate(snapshot.nodes)
-        flame_nodes[idx] = FlameNode(node)
+        flame_nodes[idx] = TreeNode(node)
     end
     return flame_nodes
 end
@@ -68,7 +68,7 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
     # do BFS with priority queue
     seen = Set{UInt64}() # set of node indexes
     root_flame_node = flame_nodes[1]
-    queue = DataStructures.PriorityQueue{FlameNode, Int}(Base.Order.Reverse)
+    queue = DataStructures.PriorityQueue{TreeNode, Int}(Base.Order.Reverse)
     DataStructures.enqueue!(queue, root_flame_node, NORMAL_PRIORITY)
     
     i = 0
@@ -122,7 +122,7 @@ function get_attr_name(snapshot::ParsedSnapshot, edge::RawEdge)
     error("unknown kind: $kind")
 end
 
-function compute_sizes!(root::FlameNode)
+function compute_sizes!(root::TreeNode)
     stack = Stack()
     push!(stack, root)
     return_value = 0
@@ -145,7 +145,7 @@ function compute_sizes!(root::FlameNode)
     end
 end
 
-function as_json(snapshot::ParsedSnapshot, node::FlameNode; cur_depth=0, max_depth=10000)
+function as_json(snapshot::ParsedSnapshot, node::TreeNode; cur_depth=0, max_depth=10000)
     children = get_relevant_children(node; cur_depth=cur_depth, max_depth=max_depth)
     node_name = snapshot.strings[node.node.name]
     return Dict(
@@ -166,7 +166,7 @@ end
 
 # return the top 10 nodes by total value
 # TODO: "rest" node
-function get_relevant_children(node::FlameNode; cur_depth=0, max_depth=10000, top_n=5)
+function get_relevant_children(node::TreeNode; cur_depth=0, max_depth=10000, top_n=5)
     if cur_depth > max_depth
         return []
     end
@@ -178,11 +178,11 @@ end
 # TODO: not sure if this is worth it
 
 struct Stack
-    nodes::Vector{FlameNode}
+    nodes::Vector{TreeNode}
     child_indices::Vector{Int}
 
     function Stack()
-        return new(Vector{FlameNode}(), Vector{Int}())
+        return new(Vector{TreeNode}(), Vector{Int}())
     end
 end
 
@@ -196,7 +196,7 @@ function get_priority(avoid_set::Set{Int}, node::RawNode)
     return NORMAL_PRIORITY
 end
 
-function Base.push!(stack::Stack, node::FlameNode)
+function Base.push!(stack::Stack, node::TreeNode)
     push!(stack.nodes, node)
     push!(stack.child_indices, 1)
 end
@@ -226,7 +226,7 @@ function nodes_vector(stack::Stack)
     return stack.nodes
 end
 
-function visit(f::Function, root::FlameNode)
+function visit(f::Function, root::TreeNode)
     stack = Stack()
     push!(stack, root)
     i = 0
@@ -252,14 +252,14 @@ function visit(f::Function, root::FlameNode)
     end
 end
 
-function get_id(node::FlameNode)
+function get_id(node::TreeNode)
     if node.node isa RawNode
         return node.node.id
     end
     return node.node.first_child_id
 end
 
-function get_name(snapshot::ParsedSnapshot, node::FlameNode)
+function get_name(snapshot::ParsedSnapshot, node::TreeNode)
     if node.node isa RawNode
         node_name = snapshot.strings[node.node.name]
         num_out_edges = length(node.node.edge_indexes)

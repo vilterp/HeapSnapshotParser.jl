@@ -38,7 +38,7 @@ function format_bytes(bytes::Int)
     return "$num$unit"
 end
 
-function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
+function build_pprof(snapshot::ParsedSnapshot, root::TreeNode)
     string_table = OrderedDict{String, Int64}()
     enter!(string) = _enter!(string_table, string)
     enter!(::Nothing) = _enter!(string_table, "nothing")
@@ -63,7 +63,7 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
 
     period_type = ValueType!("heap", "bytes")
 
-    function enter_function(node::FlameNode)
+    function enter_function(node::TreeNode)
         raw_id = get_id(node)
         return get!(funcs, raw_id) do
             id = sanitize_id(raw_id)
@@ -75,7 +75,7 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
         end
     end
 
-    function enter_location(node::FlameNode)
+    function enter_location(node::TreeNode)
         raw_id = get_id(node)
         return get!(locs, raw_id) do
             id = sanitize_id(raw_id)
@@ -131,7 +131,7 @@ end
 
 """
     pprof(
-        flame_graph::FlameNode;
+        flame_graph::TreeNode;
         web = true, webhost = "localhost", webport = 57599,
         out = "profile.pb.gz"
     )
@@ -148,7 +148,7 @@ overwriting the output file. `PProf.kill()` will kill the server.
 You can also use `PProf.refresh(file="...")` to open a new file in the server.
 
 # Arguments:
-- `flame_graph::FlameNode`
+- `flame_graph::TreeNode`
 
 # Keyword Arguments
 - `web::Bool`: Whether to launch the `go tool pprof` interactive webserver for viewing results.
@@ -160,7 +160,7 @@ You can also use `PProf.refresh(file="...")` to open a new file in the server.
 """
 function pprof(
     snapshot::ParsedSnapshot,
-    flame_graph::FlameNode;
+    flame_graph::TreeNode;
     size_threshold::Float64 = 0.001,
     web::Bool = true,
     webhost::AbstractString = "localhost",

@@ -1,6 +1,6 @@
-function top_tree(node::FlameNode; top_n=10, cur_depth=0, max_depth=10000)
+function top_tree(node::TreeNode; top_n=10, cur_depth=0, max_depth=10000)
     if cur_depth > max_depth
-        return FlameNode(
+        return TreeNode(
             node.node,
             node.attr_name,
             node.total_value,
@@ -35,18 +35,18 @@ function top_tree(node::FlameNode; top_n=10, cur_depth=0, max_depth=10000)
     end
     
     if rest_num > 0
-        rest = FlameNode(
+        rest = TreeNode(
             RestNode(rest_num, rest_first_id),
             "", # TODO: refactor this away
             rest_total,
             rest_total,
             node,
-            Vector{FlameNode}(),
+            Vector{TreeNode}(),
         )
         push!(new_children, rest)
     end
     
-    return FlameNode(
+    return TreeNode(
         node.node,
         node.attr_name,
         node.self_value,
@@ -56,7 +56,7 @@ function top_tree(node::FlameNode; top_n=10, cur_depth=0, max_depth=10000)
     )
 end
 
-function size(node::FlameNode)
+function size(node::TreeNode)
     i = 0
     visit(node) do node, stack
         i += 1
@@ -64,8 +64,8 @@ function size(node::FlameNode)
     return i
 end
 
-function leaves(root::FlameNode)
-    leaves = Vector{FlameNode}()
+function leaves(root::TreeNode)
+    leaves = Vector{TreeNode}()
     i = 0
     visit(root) do node, stack
         i += 1
@@ -76,7 +76,7 @@ function leaves(root::FlameNode)
     return leaves
 end
 
-function max_depth(root::FlameNode)
+function max_depth(root::TreeNode)
     max_depth = 0
     visit(root) do node, stack
         max_depth = max(max_depth, length(stack.nodes))
