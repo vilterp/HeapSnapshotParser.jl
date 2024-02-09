@@ -83,19 +83,20 @@ function get_flame_graph(snapshot::ParsedSnapshot)
             @info "visited $i nodes"
         end
         
-        node = dequeue!(queue)
+        node = DataStructures.dequeue!(queue)
         
-        for edge_idx in node.edge_indexes
+        for edge_idx in node.node.edge_indexes
             edge = snapshot.edges[edge_idx]
             if edge.to in seen
                 continue
             end
             
+            push!(seen, edge.to)
             child = flame_nodes[edge.to]
             child.parent = node # TODO: this is unused
             push!(node.children, child)
             
-            priority = get_priority(avoid_ids, child)
+            priority = get_priority(avoid_ids, child.node)
             DataStructures.enqueue!(queue, child, priority)
         end
         
