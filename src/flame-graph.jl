@@ -59,18 +59,16 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     
     @time flame_nodes = assemble_flame_nodes(snapshot)
     
-    # avoid these types while computing spanning tree
+    # deprioritize these types while computing spanning tree
     avoid_ids = Set(
         findfirst(isequal(str), snapshot.strings)
         for str in AVOID_SET
     )
 
-    # do DFS
+    # do BFS with priority queue
     seen = Set{UInt64}() # set of node indexes
     root_flame_node = flame_nodes[1]
-    
     queue = DataStructures.PriorityQueue{FlameNode, Int}(Base.Order.Reverse)
-    
     DataStructures.enqueue!(queue, root_flame_node, NORMAL_PRIORITY)
     
     i = 0
