@@ -192,9 +192,9 @@ function avoid_comparator(avoid_set::Set{Int}, snapshot::ParsedSnapshot, edge_id
     edge = snapshot.edges[edge_idx]
     node = snapshot.nodes[edge.to]
     if node.name in avoid_set
-        return -1
+        return 0
     end
-    return 0
+    return -1
 end
 
 function special_push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{Int}, node::FlameNode)
@@ -202,7 +202,7 @@ function special_push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{In
         node.node.edge_indexes,
         by=edge_idx -> avoid_comparator(avoid_set, snapshot, edge_idx),
     )
-    
+        
     push!(stack.nodes, node)
     push!(stack.child_indices, 1)
     push!(stack.ordered_out_edges, ordered_out_edges)
