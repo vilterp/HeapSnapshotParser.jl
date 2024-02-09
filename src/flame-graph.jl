@@ -68,31 +68,29 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         findfirst(isequal(str), snapshot.strings)
         for str in AVOID_SET
     )
-    @info "avoid" AVOID_SET
-    should_avoid = node -> node.name in avoid_ids
-    
+
     # do DFS
     seen = Set{UInt64}() # set of node indexes
     root_flame_node = flame_nodes[1]
     stack = Stack()
-    push!(stack, root_flame_node)
+    push!(stack, snapshot, avoid_ids, root_flame_node)
     
     i = 0
     @info "getting spanning tree"
     
     while !isempty(stack)
         i += 1
-        node, child_index = top(stack)
+        node, child_index, ordered_children = top(stack)
         
         # pop the stack if we're done with this node
         at_last_child = child_index > length(node.node.edge_indexes)
-        if at_last_child || should_avoid(node.node)
+        if at_last_child
             pop!(stack)
             continue
         end
         
         # Look at the next edge
-        edge_idx = node.node.edge_indexes[child_index]
+        edge_idx = ordered_children[child_index]
         edge = snapshot.edges[edge_idx]
         increment!(stack)
         
@@ -109,11 +107,11 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         child.parent = node
         child.attr_name = attr_name
         push!(node.children, child)
-        push!(stack, child)
+        push!(stack, snapshot, avoid_ids, child)
     end
     
     @info "computing sizes"
-    compute_sizes!(root_flame_node)
+    compute_sizes!(snapshot, avoid_ids, root_flame_node)
     
     return root_flame_node
 end
@@ -134,9 +132,10 @@ function get_attr_name(snapshot::ParsedSnapshot, edge::RawEdge)
     error("unknown kind: $kind")
 end
 
-function compute_sizes!(root::FlameNode)
+# TODO: this doesn't need to do a avoid-sensitive traversal
+function compute_sizes!(snapshot::ParsedSnapshot, avoid_ids::Set{Int}, root::FlameNode)
     stack = Stack()
-    push!(stack, root)
+    push!(stack, snapshot, avoid_ids, root)
     return_value = 0
     while !isempty(stack)
         node, child_index = top(stack)
@@ -153,7 +152,7 @@ function compute_sizes!(root::FlameNode)
         increment!(stack)
         
         child.total_value = child.self_value
-        push!(stack, child)
+        push!(stack, snapshot, avoid_ids, child)
     end
 end
 
@@ -192,20 +191,37 @@ end
 struct Stack
     nodes::Vector{FlameNode}
     child_indices::Vector{Int}
+    ordered_children::Vector{Vector{Int}}
     
     function Stack()
-        return new(Vector{FlameNode}(), Vector{Int}())
+        return new(Vector{FlameNode}(), Vector{Int}(), Vector{Vector{Int}}())
     end
 end
 
-function Base.push!(stack::Stack, node::FlameNode)
+function avoid_comparator(avoid_set::Set{Int}, snapshot::ParsedSnapshot, edge_idx::Int)
+    edge = snapshot.edges[edge_idx]
+    node = snapshot.nodes[edge.to]
+    if node.name in avoid_set
+        return -1
+    end
+    return 0
+end
+
+function Base.push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{Int}, node::FlameNode)
+    ordered_children = sort(
+        node.node.edge_indexes,
+        by=edge_idx -> avoid_comparator(avoid_set, snapshot, edge_idx),
+    )
+    
     push!(stack.nodes, node)
     push!(stack.child_indices, 1)
+    push!(stack.ordered_children, ordered_children)
 end
 
 function Base.pop!(stack::Stack)
     node = pop!(stack.nodes)
     idx = pop!(stack.child_indices)
+    pop!(stack.ordered_children)
     return (node, idx)
 end
 
@@ -221,6 +237,7 @@ function top(stack::Stack)
     return (
         stack.nodes[end],
         stack.child_indices[end],
+        stack.ordered_children[end],
     )
 end
 
@@ -232,7 +249,7 @@ function visit(f::Function, root::FlameNode)
     stack = Stack()
     push!(stack, root)
     while !isempty(stack)
-        node, child_index = top(stack)
+        node, child_index, ordered_children = top(stack)
         
         f(node, stack)
         
@@ -241,7 +258,7 @@ function visit(f::Function, root::FlameNode)
             continue
         end
         
-        child = node.children[child_index]
+        child = ordered_children[child_index]
         increment!(stack)
         push!(stack, child)
     end
