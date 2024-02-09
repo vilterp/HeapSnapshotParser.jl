@@ -17,8 +17,8 @@ using HeapSnapshotParser
 snapshot = HeapSnapshotParser.parse_snapshot(path)
 
 # Visualize with PProf
-flame_graph = HeapSnapshotParser.get_spanning_tree(snapshot)
+spanning_tree = HeapSnapshotParser.get_spanning_tree(snapshot)
 # slim down the tree
 top_tree = HeapSnapshotParser.top_tree(spanning_tree; top_n=3, max_depth=50)
-HeapSnapshotParser.pprof(top_tree, flame_graph)
+HeapSnapshotParser.pprof(snapshot, top_tree)
 ```

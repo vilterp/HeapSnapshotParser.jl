@@ -60,10 +60,13 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
     @time tree_nodes = assemble_tree_nodes(snapshot)
     
     # deprioritize these types while computing spanning tree
-    avoid_ids = Set(
-        findfirst(isequal(str), snapshot.strings)
-        for str in AVOID_SET
-    )
+    avoid_ids = Set{Int}()
+    for name in AVOID_SET
+        idx = findfirst(isequal(name), snapshot.strings)
+        if idx !== nothing
+            push!(avoid_ids, idx)
+        end
+    end
 
     # do BFS with priority queue
     seen = Set{UInt64}() # set of node indexes
