@@ -35,12 +35,4 @@ function get_out_edges(snapshot::ParsedSnapshot, node::RawNode)
     )
 end
 
-function get_out_edges(snapshot::ParsedSnapshot, node::RawNode)
-    edges = [snapshot.edges[i] for i in node.edge_indexes]
-    return Dict(
-        snapshot.strings[edge.name] => snapshot.nodes[edge.to]
-        for edge in edges
-    )
-end
-
 end # module
