@@ -69,7 +69,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     seen = Set{UInt64}() # set of node indexes
     root_flame_node = flame_nodes[1]
     
-    queue = DataStructures.PriorityQueue{FlameNode, Int}()
+    queue = DataStructures.PriorityQueue{FlameNode, Int}(Base.Order.Reverse)
     
     DataStructures.enqueue!(queue, root_flame_node, NORMAL_PRIORITY)
     
@@ -182,10 +182,9 @@ end
 struct Stack
     nodes::Vector{FlameNode}
     child_indices::Vector{Int}
-    ordered_out_edges::Vector{AbstractArray{Int}}
-    
+
     function Stack()
-        return new(Vector{FlameNode}(), Vector{Int}(), Vector{Vector{Int}}())
+        return new(Vector{FlameNode}(), Vector{Int}())
     end
 end
 
@@ -199,31 +198,14 @@ function get_priority(avoid_set::Set{Int}, node::RawNode)
     return NORMAL_PRIORITY
 end
 
-function special_push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{Int}, node::FlameNode)
-    ordered_out_edges = sort(
-        node.node.edge_indexes,
-        by=edge_idx -> avoid_comparator(avoid_set, snapshot, edge_idx),
-    )
-        
-    push!(stack.nodes, node)
-    push!(stack.child_indices, 1)
-    push!(stack.ordered_out_edges, ordered_out_edges)
-end
-
 function Base.push!(stack::Stack, node::FlameNode)
     push!(stack.nodes, node)
     push!(stack.child_indices, 1)
-    if node.node isa RawNode
-        push!(stack.ordered_out_edges, sort(node.node.edge_indexes))
-    else
-        push!(stack.ordered_out_edges, [])
-    end
 end
 
 function Base.pop!(stack::Stack)
     node = pop!(stack.nodes)
     idx = pop!(stack.child_indices)
-    pop!(stack.ordered_out_edges)
     return (node, idx)
 end
 
@@ -239,7 +221,6 @@ function top(stack::Stack)
     return (
         stack.nodes[end],
         stack.child_indices[end],
-        stack.ordered_out_edges[end],
     )
 end
 
@@ -258,7 +239,7 @@ function visit(f::Function, root::FlameNode)
             @info "visited $i nodes"
         end
         
-        node, child_index, ordered_out_edges = top(stack)
+        node, child_index = top(stack)
         
         f(node, stack)
         
