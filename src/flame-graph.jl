@@ -54,7 +54,7 @@ const AVOID_SET = Set{String}([
     "Any",
 ])
 
-function get_flame_graph(snapshot::ParsedSnapshot)
+function get_spanning_tree(snapshot::ParsedSnapshot)
     @info "assembling flame nodes"
     
     @time flame_nodes = assemble_flame_nodes(snapshot)

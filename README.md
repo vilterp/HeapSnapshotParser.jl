@@ -17,6 +17,6 @@ using HeapSnapshotParser
 snapshot = HeapSnapshotParser.parse_snapshot(path)
 
 # Visualize with PProf
-flame_graph = HeapSnapshotParser.get_flame_graph(snapshot)
+flame_graph = HeapSnapshotParser.get_spanning_tree(snapshot)
 HeapSnapshotParser.pprof(snapshot, flame_graph)
 ```
