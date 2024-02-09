@@ -71,7 +71,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     
     while !isempty(stack)
         i += 1
-        node, child_index, ordered_children = top(stack)
+        node, child_index, ordered_out_edges = top(stack)
         
         # pop the stack if we're done with this node
         at_last_child = child_index > length(node.node.edge_indexes)
@@ -81,7 +81,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         end
         
         # Look at the next edge
-        edge_idx = ordered_children[child_index]
+        edge_idx = ordered_out_edges[child_index]
         edge = snapshot.edges[edge_idx]
         increment!(stack)
         
@@ -182,7 +182,7 @@ end
 struct Stack
     nodes::Vector{FlameNode}
     child_indices::Vector{Int}
-    ordered_children::Vector{Vector{Int}}
+    ordered_out_edges::Vector{Vector{Int}}
     
     function Stack()
         return new(Vector{FlameNode}(), Vector{Int}(), Vector{Vector{Int}}())
@@ -199,20 +199,20 @@ function avoid_comparator(avoid_set::Set{Int}, snapshot::ParsedSnapshot, edge_id
 end
 
 function Base.push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{Int}, node::FlameNode)
-    ordered_children = sort(
+    ordered_out_edges = sort(
         node.node.edge_indexes,
         by=edge_idx -> avoid_comparator(avoid_set, snapshot, edge_idx),
     )
     
     push!(stack.nodes, node)
     push!(stack.child_indices, 1)
-    push!(stack.ordered_children, ordered_children)
+    push!(stack.ordered_out_edges, ordered_out_edges)
 end
 
 function Base.pop!(stack::Stack)
     node = pop!(stack.nodes)
     idx = pop!(stack.child_indices)
-    pop!(stack.ordered_children)
+    pop!(stack.ordered_out_edges)
     return (node, idx)
 end
 
@@ -228,7 +228,7 @@ function top(stack::Stack)
     return (
         stack.nodes[end],
         stack.child_indices[end],
-        stack.ordered_children[end],
+        stack.ordered_out_edges[end],
     )
 end
 
@@ -240,7 +240,7 @@ function visit(f::Function, root::FlameNode)
     stack = Stack()
     push!(stack, root)
     while !isempty(stack)
-        node, child_index, ordered_children = top(stack)
+        node, child_index, ordered_out_edges = top(stack)
         
         f(node, stack)
         
@@ -249,7 +249,7 @@ function visit(f::Function, root::FlameNode)
             continue
         end
         
-        child = ordered_children[child_index]
+        child = ordered_out_edges[child_index]
         increment!(stack)
         push!(stack, child)
     end
