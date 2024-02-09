@@ -47,6 +47,9 @@ const AVOID_SET = Set{String}([
     "Revise",
     "loaded_modules",
     "Destructors",
+    "Base.IdDict{Any, Any}",
+    "Core",
+    "Any",
 ])
 
 function get_flame_graph(snapshot::ParsedSnapshot)
@@ -71,6 +74,11 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     
     while !isempty(stack)
         i += 1
+        
+        if i % 100000 == 0
+            @info "visited $i nodes"
+        end
+        
         node, child_index, ordered_out_edges = top(stack)
         
         # pop the stack if we're done with this node
