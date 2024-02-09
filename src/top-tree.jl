@@ -1,6 +1,13 @@
 function top_tree(node::FlameNode; top_n=10, cur_depth=0, max_depth=10000)
     if cur_depth > max_depth
-        return node
+        return FlameNode(
+            node.node,
+            node.attr_name,
+            node.self_value,
+            node.total_value,
+            node.parent,
+            [],
+        )
     end
     
     children_by_size = sort(node.children, by=x->x.total_value, rev=true)
@@ -67,4 +74,12 @@ function leaves(root::FlameNode)
         end
     end
     return leaves
+end
+
+function max_depth(root::FlameNode)
+    max_depth = 0
+    visit(root) do node, stack
+        max_depth = max(max_depth, length(stack.nodes))
+    end
+    return max_depth
 end
