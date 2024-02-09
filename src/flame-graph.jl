@@ -1,3 +1,5 @@
+import DataStructures
+
 struct RestNode
     num::Int
     first_child_id::Int
@@ -66,47 +68,37 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     # do DFS
     seen = Set{UInt64}() # set of node indexes
     root_flame_node = flame_nodes[1]
-    stack = Stack()
-    special_push!(stack, snapshot, avoid_ids, root_flame_node)
+    
+    queue = DataStructures.PriorityQueue{FlameNode, Int}()
+    
+    DataStructures.enqueue!(queue, root_flame_node, NORMAL_PRIORITY)
     
     i = 0
     @info "getting spanning tree"
     
-    while !isempty(stack)
+    while !isempty(queue)
         i += 1
         
         if i % 100000 == 0
             @info "visited $i nodes"
         end
         
-        node, child_index, ordered_out_edges = top(stack)
+        node = dequeue!(queue)
         
-        # pop the stack if we're done with this node
-        at_last_child = child_index > length(node.node.edge_indexes)
-        if at_last_child
-            pop!(stack)
-            continue
+        for edge_idx in node.edge_indexes
+            edge = snapshot.edges[edge_idx]
+            if edge.to in seen
+                continue
+            end
+            
+            child = flame_nodes[edge.to]
+            child.parent = node # TODO: this is unused
+            push!(node.children, child)
+            
+            priority = get_priority(avoid_ids, child)
+            DataStructures.enqueue!(queue, child, priority)
         end
         
-        # Look at the next edge
-        edge_idx = ordered_out_edges[child_index]
-        edge = snapshot.edges[edge_idx]
-        increment!(stack)
-        
-        # Skip it if we've already seen it
-        if in(edge.to, seen)
-            continue
-        end
-        
-        child = flame_nodes[edge.to]
-        attr_name = get_attr_name(snapshot, edge)
-        
-        # Look at the next child
-        push!(seen, edge.to)
-        child.parent = node
-        child.attr_name = attr_name
-        push!(node.children, child)
-        special_push!(stack, snapshot, avoid_ids, child)
     end
     
     @info "computing sizes"
@@ -196,13 +188,14 @@ struct Stack
     end
 end
 
-function avoid_comparator(avoid_set::Set{Int}, snapshot::ParsedSnapshot, edge_idx::Int)
-    edge = snapshot.edges[edge_idx]
-    node = snapshot.nodes[edge.to]
+const NORMAL_PRIORITY = 1
+const AVOID_PRIORITY = -1
+
+function get_priority(avoid_set::Set{Int}, node::RawNode)
     if node.name in avoid_set
-        return 0
+        return AVOID_PRIORITY
     end
-    return -1
+    return NORMAL_PRIORITY
 end
 
 function special_push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{Int}, node::FlameNode)
