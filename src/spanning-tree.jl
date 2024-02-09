@@ -22,12 +22,12 @@ function Base.show(io::IO, node::TreeNode)
     print(io, "TreeNode($(node.attr_name): $(node.node), $(node.self_value) self, $(node.total_value) total, $(length(node.children)) children)")
 end
 
-function assemble_flame_nodes(snapshot::ParsedSnapshot)
-    flame_nodes = Dict{UInt64,TreeNode}()
+function assemble_tree_nodes(snapshot::ParsedSnapshot)
+    tree_nodes = Dict{UInt64,TreeNode}()
     for (idx, node) in enumerate(snapshot.nodes)
-        flame_nodes[idx] = TreeNode(node)
+        tree_nodes[idx] = TreeNode(node)
     end
-    return flame_nodes
+    return tree_nodes
 end
 
 const AVOID_SET = Set{String}([
@@ -55,9 +55,9 @@ const AVOID_SET = Set{String}([
 ])
 
 function get_spanning_tree(snapshot::ParsedSnapshot)
-    @info "assembling flame nodes"
+    @info "assembling tree nodes"
     
-    @time flame_nodes = assemble_flame_nodes(snapshot)
+    @time tree_nodes = assemble_tree_nodes(snapshot)
     
     # deprioritize these types while computing spanning tree
     avoid_ids = Set(
@@ -67,9 +67,9 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
 
     # do BFS with priority queue
     seen = Set{UInt64}() # set of node indexes
-    root_flame_node = flame_nodes[1]
+    root_tree_node = tree_nodes[1]
     queue = DataStructures.PriorityQueue{TreeNode, Int}(Base.Order.Reverse)
-    DataStructures.enqueue!(queue, root_flame_node, NORMAL_PRIORITY)
+    DataStructures.enqueue!(queue, root_tree_node, NORMAL_PRIORITY)
     
     i = 0
     @info "getting spanning tree"
@@ -90,7 +90,7 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
             end
             
             push!(seen, edge.to)
-            child = flame_nodes[edge.to]
+            child = tree_nodes[edge.to]
             child.parent = node # TODO: this is unused
             push!(node.children, child)
             
@@ -101,9 +101,9 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
     end
     
     @info "computing sizes"
-    compute_sizes!(root_flame_node)
+    compute_sizes!(root_tree_node)
     
-    return root_flame_node
+    return root_tree_node
 end
 
 function get_attr_name(snapshot::ParsedSnapshot, edge::RawEdge)
