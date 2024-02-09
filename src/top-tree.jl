@@ -1,12 +1,13 @@
 function top_tree(node::TreeNode; top_n=10, cur_depth=0, max_depth=10000)
     if cur_depth > max_depth
+        children = get_rest_node_for_truncated(node)
         return TreeNode(
             node.node,
             node.retainers,
             node.attr_name,
+            node.self_value,
             node.total_value,
-            node.total_value,
-            [],
+            children,
         )
     end
     
@@ -54,6 +55,21 @@ function top_tree(node::TreeNode; top_n=10, cur_depth=0, max_depth=10000)
         node.total_value,
         new_children,
     )
+end
+
+function get_rest_node_for_truncated(node::TreeNode)
+    if length(node.children) == 0
+        return []
+    end
+    rest_node = TreeNode(
+        RestNode(size(node) - 1, node.children[1].node.id),
+        0, # TODO: this only applies to RawNode; shouldn't be required here
+        "", # TODO: this only applies to RawNode; shouldn't be required here
+        node.total_value - node.self_value,
+        node.total_value,
+        [],
+    )
+    return [rest_node]
 end
 
 function size(node::TreeNode)
