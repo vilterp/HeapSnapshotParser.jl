@@ -3,7 +3,7 @@ function top_tree(node::FlameNode; top_n=10, cur_depth=0, max_depth=10000)
         return FlameNode(
             node.node,
             node.attr_name,
-            node.self_value,
+            node.total_value,
             node.total_value,
             node.parent,
             [],
