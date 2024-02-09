@@ -1,8 +1,7 @@
-function top_tree(node::FlameNode; top_pct::Float64=0.75)
+function top_tree(node::FlameNode; top_n=10)
     children_by_size = sort(node.children, by=x->x.total_value, rev=true)
     new_children = []
     
-    goal_size = node.total_value * top_pct
     new_total_size = 0
     
     rest_num = 0
@@ -10,7 +9,7 @@ function top_tree(node::FlameNode; top_pct::Float64=0.75)
     rest_first_id = 0
 
     for child in children_by_size
-        if new_total_size >= goal_size
+        if length(new_children) >= top_n
             if rest_first_id == 0
                 rest_first_id = child.node.id
             end
@@ -20,7 +19,7 @@ function top_tree(node::FlameNode; top_pct::Float64=0.75)
         end
        
         new_total_size += child.total_value
-        new_child = top_tree(child; top_pct)
+        new_child = top_tree(child; top_n)
         push!(new_children, new_child)
     end
     

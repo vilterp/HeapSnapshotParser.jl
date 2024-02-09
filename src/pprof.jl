@@ -116,6 +116,8 @@ function build_pprof(snapshot::ParsedSnapshot, root::FlameNode)
         period_type = period_type,
     )
     
+    @info "built profile" samples=length(samples) functions=length(funcs) locations=length(locs)
+    
     return prof
 end
 
