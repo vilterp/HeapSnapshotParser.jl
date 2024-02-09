@@ -20,15 +20,6 @@ function Base.show(io::IO, node::FlameNode)
     print(io, "FlameNode($(node.attr_name): $(node.node), $(node.self_value) self, $(node.total_value) total, $(length(node.children)) children)")
 end
 
-mutable struct StackFrame
-    node::FlameNode
-    child_index::Int
-end
-
-function StackFrame(node::FlameNode)
-    return StackFrame(node, 1)
-end
-
 function assemble_flame_nodes(snapshot::ParsedSnapshot)
     flame_nodes = Dict{UInt64,FlameNode}()
     for (idx, node) in enumerate(snapshot.nodes)
