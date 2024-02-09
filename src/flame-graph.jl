@@ -64,7 +64,7 @@ function get_flame_graph(snapshot::ParsedSnapshot)
     seen = Set{UInt64}() # set of node indexes
     root_flame_node = flame_nodes[1]
     stack = Stack()
-    push!(stack, snapshot, avoid_ids, root_flame_node)
+    special_push!(stack, snapshot, avoid_ids, root_flame_node)
     
     i = 0
     @info "getting spanning tree"
@@ -98,11 +98,11 @@ function get_flame_graph(snapshot::ParsedSnapshot)
         child.parent = node
         child.attr_name = attr_name
         push!(node.children, child)
-        push!(stack, snapshot, avoid_ids, child)
+        special_push!(stack, snapshot, avoid_ids, child)
     end
     
     @info "computing sizes"
-    compute_sizes!(snapshot, avoid_ids, root_flame_node)
+    compute_sizes!(root_flame_node)
     
     return root_flame_node
 end
@@ -123,10 +123,9 @@ function get_attr_name(snapshot::ParsedSnapshot, edge::RawEdge)
     error("unknown kind: $kind")
 end
 
-# TODO: this doesn't need to do a avoid-sensitive traversal
-function compute_sizes!(snapshot::ParsedSnapshot, avoid_ids::Set{Int}, root::FlameNode)
+function compute_sizes!(root::FlameNode)
     stack = Stack()
-    push!(stack, snapshot, avoid_ids, root)
+    push!(stack, root)
     return_value = 0
     while !isempty(stack)
         node, child_index = top(stack)
@@ -143,7 +142,7 @@ function compute_sizes!(snapshot::ParsedSnapshot, avoid_ids::Set{Int}, root::Fla
         increment!(stack)
         
         child.total_value = child.self_value
-        push!(stack, snapshot, avoid_ids, child)
+        push!(stack, child)
     end
 end
 
@@ -182,7 +181,7 @@ end
 struct Stack
     nodes::Vector{FlameNode}
     child_indices::Vector{Int}
-    ordered_out_edges::Vector{Vector{Int}}
+    ordered_out_edges::Vector{AbstractArray{Int}}
     
     function Stack()
         return new(Vector{FlameNode}(), Vector{Int}(), Vector{Vector{Int}}())
@@ -198,7 +197,7 @@ function avoid_comparator(avoid_set::Set{Int}, snapshot::ParsedSnapshot, edge_id
     return 0
 end
 
-function Base.push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{Int}, node::FlameNode)
+function special_push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{Int}, node::FlameNode)
     ordered_out_edges = sort(
         node.node.edge_indexes,
         by=edge_idx -> avoid_comparator(avoid_set, snapshot, edge_idx),
@@ -207,6 +206,16 @@ function Base.push!(stack::Stack, snapshot::ParsedSnapshot, avoid_set::Set{Int},
     push!(stack.nodes, node)
     push!(stack.child_indices, 1)
     push!(stack.ordered_out_edges, ordered_out_edges)
+end
+
+function Base.push!(stack::Stack, node::FlameNode)
+    push!(stack.nodes, node)
+    push!(stack.child_indices, 1)
+    if node.node isa RawNode
+        push!(stack.ordered_out_edges, sort(node.node.edge_indexes))
+    else
+        push!(stack.ordered_out_edges, [])
+    end
 end
 
 function Base.pop!(stack::Stack)
@@ -239,7 +248,14 @@ end
 function visit(f::Function, root::FlameNode)
     stack = Stack()
     push!(stack, root)
+    i = 0
     while !isempty(stack)
+        i += 1
+        
+        if i % 100000 == 0
+            @info "visited $i nodes"
+        end
+        
         node, child_index, ordered_out_edges = top(stack)
         
         f(node, stack)
@@ -249,7 +265,7 @@ function visit(f::Function, root::FlameNode)
             continue
         end
         
-        child = ordered_out_edges[child_index]
+        child = node.children[child_index]
         increment!(stack)
         push!(stack, child)
     end

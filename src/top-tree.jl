@@ -1,4 +1,8 @@
-function top_tree(node::FlameNode; top_n=10)
+function top_tree(node::FlameNode; top_n=10, cur_depth=0, max_depth=10000)
+    if cur_depth > max_depth
+        return node
+    end
+    
     children_by_size = sort(node.children, by=x->x.total_value, rev=true)
     new_children = []
     
@@ -19,7 +23,7 @@ function top_tree(node::FlameNode; top_n=10)
         end
        
         new_total_size += child.total_value
-        new_child = top_tree(child; top_n)
+        new_child = top_tree(child; top_n, cur_depth=cur_depth+1, max_depth)
         push!(new_children, new_child)
     end
     
