@@ -2,10 +2,10 @@ function top_tree(node::TreeNode; top_n=10, cur_depth=0, max_depth=10000)
     if cur_depth > max_depth
         return TreeNode(
             node.node,
+            node.retainers,
             node.attr_name,
             node.total_value,
             node.total_value,
-            node.parent,
             [],
         )
     end
@@ -37,10 +37,10 @@ function top_tree(node::TreeNode; top_n=10, cur_depth=0, max_depth=10000)
     if rest_num > 0
         rest = TreeNode(
             RestNode(rest_num, rest_first_id),
-            "", # TODO: refactor this away
+            0, # TODO: this only applies to RawNode; shouldn't be required here
+            "", # TODO: this only applies to RawNode; shouldn't be required here
             rest_total,
             rest_total,
-            node,
             Vector{TreeNode}(),
         )
         push!(new_children, rest)
@@ -48,10 +48,10 @@ function top_tree(node::TreeNode; top_n=10, cur_depth=0, max_depth=10000)
     
     return TreeNode(
         node.node,
+        node.retainers,
         node.attr_name,
         node.self_value,
         node.total_value,
-        node.parent,
         new_children,
     )
 end

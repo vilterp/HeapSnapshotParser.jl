@@ -7,15 +7,15 @@ end
 
 mutable struct TreeNode
     node::Union{RawNode,RestNode}
+    retainers::Int
     attr_name::Union{Nothing,String}
     self_value::Int
     total_value::Int
-    parent::Union{TreeNode,Nothing}
     children::Vector{TreeNode}
 end
 
 function TreeNode(node::RawNode)
-    return TreeNode(node, nothing, node.self_size, 0, nothing, Vector{TreeNode}())
+    return TreeNode(node, 0, nothing, node.self_size, 0, Vector{TreeNode}())
 end
 
 function Base.show(io::IO, node::TreeNode)
@@ -85,14 +85,15 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
         
         for edge_idx in node.node.edge_indexes
             edge = snapshot.edges[edge_idx]
+            child = tree_nodes[edge.to]
+            child.retainers += 1
             if edge.to in seen
                 continue
             end
             
             push!(seen, edge.to)
-            child = tree_nodes[edge.to]
-            child.parent = node # TODO: this is unused
             push!(node.children, child)
+            child.attr_name = get_attr_name(snapshot, edge)
             
             priority = get_priority(avoid_ids, child.node)
             DataStructures.enqueue!(queue, child, priority)
@@ -263,7 +264,7 @@ function get_name(snapshot::ParsedSnapshot, node::TreeNode)
     if node.node isa RawNode
         node_name = snapshot.strings[node.node.name]
         num_out_edges = length(node.node.edge_indexes)
-        suffix = "$(node_name) ($(format_bytes(node.total_value)) total size) ($num_out_edges out edges) (id $(node.node.id))"
+        suffix = "$(node_name) ($(format_bytes(node.total_value)) total size) ($num_out_edges out edges) ($(node.retainers) retainers)"
         return if node.attr_name === nothing
             suffix
         else
