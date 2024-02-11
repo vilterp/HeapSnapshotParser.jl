@@ -27,6 +27,7 @@ include("stack.jl")
 include("pprof.jl")
 include("sccs.jl")
 include("top-tree.jl")
+include("sparse-matrix.jl")
 
 function get_out_edges(snapshot::ParsedSnapshot, node::RawNode)
     edges = snapshot.edges[node.edge_indexes]
