@@ -53,9 +53,9 @@ end
     expected = (
 """{
     "name": "",
-    "num_children": 6,
+    "num_children": 5,
     "self_value": 0,
-    "total_value": 2304,
+    "total_value": 1920,
     "children": [
         {
             "name": "<internal>: Task",
@@ -118,80 +118,140 @@ end
     expected = (
 """{
     "name": "",
-    "num_children": 8,
+    "num_children": 7,
     "self_value": 0,
-    "total_value": 14658045,
+    "total_value": 146430252,
     "children": [
         {
             "name": "<internal>: Main",
-            "num_children": 28,
+            "num_children": 32,
             "self_value": 624,
-            "total_value": 14655740,
+            "total_value": 146423677,
             "children": [
                 {
-                    "name": "<native>: Base",
-                    "num_children": 2,
-                    "self_value": 48,
-                    "total_value": 14586244,
+                    "name": "<element>: Base",
+                    "num_children": 6098,
+                    "self_value": 624,
+                    "total_value": 141562176,
                     "children": []
                 },
                 {
-                    "name": "<hidden>: <inline>",
-                    "num_children": 0,
-                    "self_value": 65536,
-                    "total_value": 65536,
+                    "name": "<element>: InteractiveUtils",
+                    "num_children": 265,
+                    "self_value": 624,
+                    "total_value": 2298590,
                     "children": []
                 },
                 {
-                    "name": "<native>: Revise",
-                    "num_children": 1,
-                    "self_value": 48,
-                    "total_value": 1712,
+                    "name": "<element>: Profile",
+                    "num_children": 308,
+                    "self_value": 624,
+                    "total_value": 1577903,
                     "children": []
                 },
                 {
-                    "name": "<native>: #1#2",
-                    "num_children": 1,
-                    "self_value": 48,
-                    "total_value": 351,
+                    "name": "<element>: Core",
+                    "num_children": 337,
+                    "self_value": 624,
+                    "total_value": 647590,
                     "children": []
                 },
                 {
-                    "name": "<native>: time_ns",
-                    "num_children": 1,
-                    "self_value": 48,
-                    "total_value": 80,
+                    "name": "<element>: Revise",
+                    "num_children": 678,
+                    "self_value": 624,
+                    "total_value": 331960,
                     "children": []
                 }
             ]
         },
         {
             "name": "<internal>: Task",
-            "num_children": 0,
+            "num_children": 3,
             "self_value": 384,
-            "total_value": 384,
-            "children": []
+            "total_value": 3514,
+            "children": [
+                {
+                    "name": "<internal>: (stack frame)",
+                    "num_children": 2,
+                    "self_value": 1,
+                    "total_value": 2793,
+                    "children": []
+                },
+                {
+                    "name": "storage: Base.IdDict{Any, Any}",
+                    "num_children": 1,
+                    "self_value": 32,
+                    "total_value": 336,
+                    "children": []
+                },
+                {
+                    "name": "<internal>: (stack frame)",
+                    "num_children": 0,
+                    "self_value": 1,
+                    "total_value": 1,
+                    "children": []
+                }
+            ]
         },
         {
             "name": "<internal>: Task",
-            "num_children": 0,
+            "num_children": 2,
             "self_value": 384,
-            "total_value": 384,
-            "children": []
+            "total_value": 941,
+            "children": [
+                {
+                    "name": "donenotify: Base.GenericCondition{Base.Threads.SpinLock}",
+                    "num_children": 2,
+                    "self_value": 24,
+                    "total_value": 528,
+                    "children": []
+                },
+                {
+                    "name": "<internal>: (stack frame)",
+                    "num_children": 2,
+                    "self_value": 1,
+                    "total_value": 29,
+                    "children": []
+                }
+            ]
         },
         {
             "name": "<internal>: Task",
-            "num_children": 0,
+            "num_children": 2,
             "self_value": 384,
-            "total_value": 384,
-            "children": []
+            "total_value": 941,
+            "children": [
+                {
+                    "name": "donenotify: Base.GenericCondition{Base.Threads.SpinLock}",
+                    "num_children": 2,
+                    "self_value": 24,
+                    "total_value": 528,
+                    "children": []
+                },
+                {
+                    "name": "<internal>: (stack frame)",
+                    "num_children": 2,
+                    "self_value": 1,
+                    "total_value": 29,
+                    "children": []
+                }
+            ]
         },
         {
             "name": "<internal>: Task",
-            "num_children": 0,
+            "num_children": 1,
             "self_value": 384,
-            "total_value": 384,
-            "children": []
+            "total_value": 411,
+            "children": [
+                {
+                    "name": "<internal>: (stack frame)",
+                    "num_children": 2,
+                    "self_value": 1,
+                    "total_value": 27,
+                    "children": []
+                }
+            ]
         }
     ]
 }
