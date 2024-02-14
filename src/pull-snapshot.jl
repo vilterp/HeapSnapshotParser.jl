@@ -2,7 +2,7 @@ function pull_snapshot(stream::Stream)
     input = HeapSnapshotParser.PullJson(stream)
     snapshot = ParsedSnapshot()
     
-    edge_types = Vector{String}()
+    edge_types = Vector{Symbol}()
     
     get_object_start(input)
     
@@ -36,7 +36,7 @@ function pull_snapshot(stream::Stream)
             begin
                 get_array(input) do
                     str = get_string(input)
-                    push!(edge_types, str)
+                    push!(edge_types, Symbol(str))
                 end
                 get_comma(input)
 
@@ -101,7 +101,7 @@ function pull_snapshot(stream::Stream)
     return snapshot
 end
 
-function pull_edge(edge_types::Vector{String}, input::PullJson)
+function pull_edge(edge_types::Vector{Symbol}, input::PullJson)
     kind = get_int(input, whitespace=false) + 1
     get_comma(input, whitespace=false)
     
@@ -110,7 +110,7 @@ function pull_edge(edge_types::Vector{String}, input::PullJson)
     
     to = div(get_int(input), NUM_NODE_FIELDS) + 1
     
-    kind_sym = Symbol(edge_types[kind])
+    kind_sym = edge_types[kind]
     
     return RawEdge(kind_sym, name, to)
 end
