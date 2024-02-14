@@ -25,6 +25,7 @@ include("pull-json.jl")
 include("pull-snapshot.jl")
 include("stack.jl")
 include("pprof.jl")
+include("json.jl")
 include("sccs.jl")
 include("top-tree.jl")
 
