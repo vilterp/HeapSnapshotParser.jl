@@ -4,13 +4,6 @@ import Mmap
 
 include("raw-snapshot.jl")
 
-#                    ,8,     4314,   4474241184,    57, 0,            0,               0
-const NODE_FIElDS = ["type", "name", "id", "self_size", "edge_count", "trace_node_id", "detachedness"]
-const NUM_NODE_FIELDS = length(NODE_FIElDS)
-
-const EDGE_FIELDS = ["type", "name_or_index", "to_node"]
-const NUM_EDGE_FIELDS = length(EDGE_FIELDS)
-
 function parse_snapshot(path::String)
     open(path) do file
         contents = Mmap.mmap(file)
