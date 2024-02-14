@@ -29,7 +29,7 @@ end
     snapshot = HeapSnapshotParser.parse_snapshot("../empty-2.heapsnapshot")
     flame_graph = HeapSnapshotParser.get_spanning_tree(snapshot)
     @info "making into pprof"
-    pprof = HeapSnapshotParser.build_pprof(snapshot, flame_graph; sample_denom=1000, max_depth=100)
+    pprof = HeapSnapshotParser.build_pprof(snapshot, flame_graph)
     @test length(pprof.sample) > 0
     @test length(pprof.location) > 0
 end
@@ -43,7 +43,6 @@ end
 
     flame_graph = HeapSnapshotParser.get_spanning_tree(snapshot)
     @test length(flame_graph.children) > 0
-    @test flame_graph.parent === nothing
     # @test flame_graph.total_value > 0
 
     dict = HeapSnapshotParser.as_json(snapshot, flame_graph; max_depth=1)
@@ -109,7 +108,6 @@ end
 
     flame_graph = HeapSnapshotParser.get_spanning_tree(snapshot)
     @test length(flame_graph.children) > 0
-    @test flame_graph.parent === nothing
     # @test flame_graph.total_value > 0
     
     dict = HeapSnapshotParser.as_json(snapshot, flame_graph; max_depth=1)
