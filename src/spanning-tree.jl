@@ -58,11 +58,11 @@ struct PriorityQueue
 end
 
 function PriorityQueue()
-    return new(Vector{TreeNode}(), Vector{TreeNode}())
+    return PriorityQueue(Vector{TreeNode}(), Vector{TreeNode}())
 end
 
 function enqueue!(pq::PriorityQueue, node::TreeNode)
-    if node.name in avoid_set
+    if node.node.name in AVOID_SET
         push!(pq.avoid, node)
     else
         push!(pq.normal, node)
@@ -98,7 +98,7 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
     # do BFS with priority queue
     seen = Set{UInt64}() # set of node indexes
     root_tree_node = tree_nodes[1]
-    queue = PriorityQueue{TreeNode}(Base.Order.Reverse)
+    queue = PriorityQueue()
     enqueue!(queue, root_tree_node)
     
     i = 0
