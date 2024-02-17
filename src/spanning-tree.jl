@@ -1,5 +1,3 @@
-import DataStructures
-
 struct RestNode
     num::Int
     first_child_id::Int
@@ -54,6 +52,35 @@ const AVOID_SET = Set{String}([
     "Any",
 ])
 
+struct PriorityQueue
+    normal::Vector{TreeNode}
+    avoid::Vector{TreeNode}
+end
+
+function PriorityQueue()
+    return new(Vector{TreeNode}(), Vector{TreeNode}())
+end
+
+function enqueue!(pq::PriorityQueue, node::TreeNode)
+    if node.name in avoid_set
+        push!(pq.avoid, node)
+    else
+        push!(pq.normal, node)
+    end
+    return nothing
+end
+
+function dequeue!(pq::PriorityQueue)
+    if length(pq.normal) > 0
+        return pop!(pq.normal)
+    end
+    return pop!(pq.avoid)
+end
+
+function isempty(pq::PriorityQueue)
+    return isempty(pq.normal) && isempty(pq.avoid)
+end
+
 function get_spanning_tree(snapshot::ParsedSnapshot)
     @info "assembling tree nodes"
     
@@ -71,8 +98,8 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
     # do BFS with priority queue
     seen = Set{UInt64}() # set of node indexes
     root_tree_node = tree_nodes[1]
-    queue = DataStructures.PriorityQueue{TreeNode, Int}(Base.Order.Reverse)
-    DataStructures.enqueue!(queue, root_tree_node, NORMAL_PRIORITY)
+    queue = PriorityQueue{TreeNode}(Base.Order.Reverse)
+    enqueue!(queue, root_tree_node)
     
     i = 0
     @info "getting spanning tree"
@@ -84,7 +111,7 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
             @info "visited $i nodes"
         end
         
-        node = DataStructures.dequeue!(queue)
+        node = dequeue!(queue)
         
         for edge_idx in node.node.edge_indexes
             edge = snapshot.edges[edge_idx]
@@ -98,8 +125,7 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
             push!(node.children, child)
             child.attr_name = get_attr_name(snapshot, edge)
             
-            priority = get_priority(avoid_ids, child.node)
-            DataStructures.enqueue!(queue, child, priority)
+            enqueue!(queue, child)
         end
         
     end
@@ -147,16 +173,6 @@ function compute_sizes!(root::TreeNode)
         child.total_value = child.self_value
         push!(stack, child)
     end
-end
-
-const NORMAL_PRIORITY = 1
-const AVOID_PRIORITY = -1
-
-function get_priority(avoid_set::Set{Int}, node::RawNode)
-    if node.name in avoid_set
-        return AVOID_PRIORITY
-    end
-    return NORMAL_PRIORITY
 end
 
 function visit(f::Function, root::TreeNode)
