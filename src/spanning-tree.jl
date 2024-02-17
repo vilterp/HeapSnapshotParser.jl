@@ -1,3 +1,5 @@
+import DataStructures
+
 struct RestNode
     num::Int
     first_child_id::Int
@@ -53,31 +55,34 @@ const AVOID_SET = Set{String}([
 ])
 
 struct PriorityQueue
-    normal::Vector{TreeNode}
-    avoid::Vector{TreeNode}
+    normal::DataStructures.Queue{TreeNode}
+    avoid::DataStructures.Queue{TreeNode}
 end
 
 function PriorityQueue()
-    return PriorityQueue(Vector{TreeNode}(), Vector{TreeNode}())
+    return PriorityQueue(
+        DataStructures.Queue{TreeNode}(),
+        DataStructures.Queue{TreeNode}(),
+    )
 end
 
 function enqueue!(pq::PriorityQueue, node::TreeNode)
     if node.node.name in AVOID_SET
-        push!(pq.avoid, node)
+        DataStructures.enqueue!(pq.avoid, node)
     else
-        push!(pq.normal, node)
+        DataStructures.enqueue!(pq.normal, node)
     end
     return nothing
 end
 
 function dequeue!(pq::PriorityQueue)
     if length(pq.normal) > 0
-        return pop!(pq.normal)
+        return DataStructures.dequeue!(pq.normal)
     end
-    return pop!(pq.avoid)
+    return DataStructures.dequeue!(pq.avoid)
 end
 
-function isempty(pq::PriorityQueue)
+function is_empty(pq::PriorityQueue)
     return isempty(pq.normal) && isempty(pq.avoid)
 end
 
@@ -104,7 +109,7 @@ function get_spanning_tree(snapshot::ParsedSnapshot)
     i = 0
     @info "getting spanning tree"
     
-    while !isempty(queue)
+    while !is_empty(queue)
         i += 1
         
         if i % 100000 == 0
