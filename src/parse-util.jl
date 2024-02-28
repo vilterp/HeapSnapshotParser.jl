@@ -26,7 +26,7 @@ end
 function expect_read(input::Stream, expected::Char)
     got = read(input, Char)
     if got != expected
-        error("expected $expected; got $got")
+        error("at index $(input.pos): expected '$expected'; got '$got'")
     end
 end
 
