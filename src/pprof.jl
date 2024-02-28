@@ -65,8 +65,8 @@ function build_pprof(snapshot::ParsedSnapshot, root::TreeNode)
 
     function enter_function(node::TreeNode)
         raw_id = get_id(node)
-        return get!(funcs, raw_id) do
-            id = sanitize_id(raw_id)
+        id = sanitize_id(raw_id)
+        return get!(funcs, id) do
             name = get_name(snapshot, node)
             return Func(
                 id = id,
@@ -123,7 +123,7 @@ end
 
 function sanitize_id(id::Int)
     if id == 0
-        return 1
+        return typemax(Int)
     else
         return id
     end
