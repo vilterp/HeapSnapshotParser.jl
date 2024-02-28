@@ -1,0 +1,39 @@
+{"snapshot":{"meta":{"node_fields":["type","name","id","self_size","edge_count","trace_node_id","detachedness"],"node_types":[["synthetic","jl_task_t","jl_module_t","jl_array_t","object","jl_sym_t","jl_datatype_t","jl_svec_t","String"],"string", "number", "number", "number", "number", "number"],"edge_fields":["type","name_or_index","to_node"],"edge_types":[["internal","hidden","element","property"],"string_or_number","from_node"]},
+"node_count":7,"edge_count":0},
+"nodes":[0,0,0,0,6,0,0
+,1,1,4454006800,384,0,0,0
+,1,1,4454989840,384,0,0,0
+,1,1,4454008000,384,0,0,0
+,1,1,4455006224,384,0,0,0
+,1,1,4454007200,384,0,0,0
+,1,1,4455022608,384,0,0,0
+],
+"edges":[0,2,7
+,0,3,7
+,0,2,14
+,0,3,21
+,0,2,28
+,0,3,35
+,0,2,42
+,0,3,42
+,0,5,49
+],
+"strings":["",
+"Task",
+"root task",
+"current task",
+"Main",
+"main_module",
+"<native>",
+"Array{Any, 1}",
+"<inline>",
+"Core.MethodInstance",
+"def",
+"Method",
+"name",
+"endswith",
+"module",
+"Base",
+"#_nthbyte",
+"typeof(Base._nthbyte)"
+]}
