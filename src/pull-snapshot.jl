@@ -102,11 +102,11 @@ function pull_snapshot(stream::Stream)
 end
 
 function pull_edge(edge_types::Vector{Symbol}, input::PullJson)
-    kind = get_int(input, whitespace=false) + 1
-    get_comma(input, whitespace=false)
+    kind = get_int(input) + 1
+    get_comma(input)
     
-    name = get_int(input, whitespace=false) + 1
-    get_comma(input, whitespace=false)
+    name = get_int(input) + 1
+    get_comma(input)
     
     to = div(get_int(input), NUM_NODE_FIELDS) + 1
     
@@ -116,25 +116,27 @@ function pull_edge(edge_types::Vector{Symbol}, input::PullJson)
 end
 
 function pull_node(input::PullJson, edge_index::Int)
-    kind = get_int(input, whitespace=false) + 1
-    get_comma(input, whitespace=false)
+    kind = get_int(input) + 1
+    get_comma(input)
     
-    name = get_int(input, whitespace=false) + 1
-    get_comma(input, whitespace=false)
+    name = get_int(input) + 1
+    get_comma(input)
     
-    id = get_int(input, whitespace=false)
-    get_comma(input, whitespace=false)
+    id = get_int(input)
+    get_comma(input)
     
-    self_size = get_int(input, whitespace=false)
-    get_comma(input, whitespace=false)
+    self_size = get_int(input)
+    get_comma(input)
     
-    num_edges = get_int(input, whitespace=false)
-    get_comma(input, whitespace=false)
+    num_edges = get_int(input)
+    get_comma(input)
     
-    trace_node_id = get_int(input, whitespace=false)
-    get_comma(input, whitespace=false)
+    trace_node_id = get_int(input)
+    get_comma(input)
     
-    detatchedness = get_int(input, whitespace=false)
+    detatchedness = get_int(input)
+    
+    # println((kind, name, id, self_size, num_edges, trace_node_id, detatchedness))
     
     range = edge_index:(edge_index + num_edges - 1)
 
